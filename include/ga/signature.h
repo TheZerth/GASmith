@@ -27,7 +27,15 @@
 
 namespace ga {
 
-static constexpr int MAX_DIMENSIONS = 16; // Maximum number of dimensions supported by the algebra. (Capacity, not always fully used)
+// Maximum number of dimensions supported by the algebra. (Capacity, not always fully used)
+static constexpr int MAX_DIMENSIONS = 5; // Almost all use cases are in 3,4 or 5 dimensions. Limiting to 5 for cga(3) support.
+// If performing clifford CL(p,q) analysis, exotic spaces analysis or quantum information analysis, adjust MAX_DIMENSIONS as needed.
+// Increasing will have significant impact on performance the signature is used to generate the blades and the algebras.
+// Blades are defined by 2^n where n is # of dimensions.
+// For 3D Euclidean: 2^3, 8 coefficients, easy
+// For 3D CGA: 2^5, 32, doable
+// For Conformal Space Time: 2^6, 64, medium
+// Exotic Space: 2^16, 65536 coefficients, HARD
 
 using Metric = std::array<int, MAX_DIMENSIONS>;
 using Mask = std::array<bool, MAX_DIMENSIONS>;
@@ -153,11 +161,17 @@ public:
         // Create blank metric
         Metric metric = {};
         int n = 0;
+        dimensionsUsed_ = 0;
+        p_ = 0;
+        q_ = 0;
+        r_ = 0;
         // Assign positive axis
         for (int i = 0; i < MAX_DIMENSIONS; ++i) {
             if (pMask[i]) {
                 metric[i] = 1;
                 ++n;
+                ++p_;
+                ++dimensionsUsed_;
             }
         }
         // Assign negative axis
@@ -165,6 +179,8 @@ public:
             if (qMask[i]) {
                 metric[i] = -1;
                 ++n;
+                ++q_;
+                ++dimensionsUsed_;
             }
         }
         // Assign null axis
@@ -172,11 +188,12 @@ public:
             if (rMask[i]) {
                 metric[i] = 0;
                 ++n;
+                ++r_;
+                ++dimensionsUsed_;
             }
         }
         // Assign metric
         metric_ = metric;
-        extractMetric(metric_, n);
         return true;
     }
 

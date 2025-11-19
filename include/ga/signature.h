@@ -1,7 +1,3 @@
-//
-// Created by zerth on 10/17/25.
-//
-
 // --- SIMPLE ---
 // A signature defines the rules of measurement of our space.
 // This tells our algebra how distances and angles behave.
@@ -31,10 +27,10 @@
 
 namespace ga {
 
-static constexpr int ALGEBRA_DIMENSIONS = 4;
+static constexpr int MAX_DIMENSIONS = 16; // Maximum number of dimensions supported by the algebra. (Capacity, not always fully used)
 
-using Metric = std::array<int, ALGEBRA_DIMENSIONS>;
-using Mask = std::array<bool, ALGEBRA_DIMENSIONS>;
+using Metric = std::array<int, MAX_DIMENSIONS>;
+using Mask = std::array<bool, MAX_DIMENSIONS>;
 
 struct Signature {
 private:
@@ -58,16 +54,21 @@ public:
     [[nodiscard]] constexpr Metric metric() const { return metric_; }
 
     // Metric Lookup
-    [[nodiscard]] constexpr int metricLookup(const int i, const int j) const { return (i==j) ? metric_[i] : 0; }  // return the value of g at index i and j. Assumes an orthogonal basis. TO DO expand to non-diagonal metric
+    [[nodiscard]] constexpr int metricLookup(const int i, const int j) const {
+        if (i < MAX_DIMENSIONS && j < MAX_DIMENSIONS && i >= 0 && j >= 0) {
+            return (i==j) ? metric_[i] : 0;
+        }
+        return -2;
+    }  // return the value of g at index i and j. Assumes an orthogonal basis. TO DO expand to non-diagonal metric
 
     // Helpers
     [[nodiscard]] constexpr int dimensionsUsed() const { return dimensionsUsed_; }
-    [[nodiscard]] constexpr int getSign(int i = 0) const { return metricLookup(i,i); }
+    [[nodiscard]] constexpr int getSign(const int i = 0) const { return metricLookup(i,i); }
     [[nodiscard]] constexpr bool isRightHanded() const { return isRightHanded_; }
     [[nodiscard]] constexpr bool isLeftHanded() const { return !isRightHanded_; }
-    [[nodiscard]] constexpr bool isPos(int i) const { return (metricLookup(i,i) == 1); }
-    [[nodiscard]] constexpr bool isNeg(int i) const { return (metricLookup(i,i) == -1); }
-    [[nodiscard]] constexpr bool isZero(int i) const { return (metricLookup(i,i) == 0); }
+    [[nodiscard]] constexpr bool isPos(const int i) const { return (metricLookup(i,i) == 1); }
+    [[nodiscard]] constexpr bool isNeg(const int i) const { return (metricLookup(i,i) == -1); }
+    [[nodiscard]] constexpr bool isZero(const int i) const { return (metricLookup(i,i) == 0); }
     [[nodiscard]] constexpr bool isDegenerate() const { return (r_ > 0); } // the signature is degenerate if the algebra contains a null axis (math jargon)
 
     // Default constructor, no dimensions.
@@ -77,7 +78,7 @@ public:
     constexpr Signature(const int p, const int q, const int r, const bool isRightHanded)
                         : p_{p}, q_{q}, r_{r}, isRightHanded_{isRightHanded} {
         if (!buildMetric(p, q, r)) {
-            throw std::invalid_argument("Failed to construct signature. buildMetric() failed, p q r sum does not equal algebra dimensions.");
+            throw std::invalid_argument("Failed to construct signature. buildMetric() failed, exceeds max dimensions.");
         }
     }
 
@@ -90,22 +91,25 @@ public:
     }
 
     // Construct a signature given a diagonal metric. TO DO expand to non-diagnonal metric
-    constexpr Signature(const Metric metric, const bool isRightHanded) : metric_{metric}, isRightHanded_{isRightHanded} {
-        extractMetric(metric);
+    constexpr Signature(const Metric &metric, const int axisCount, const bool isRightHanded) : metric_{metric}, isRightHanded_{isRightHanded} {
+        if (axisCount > MAX_DIMENSIONS || axisCount < 0) {
+            throw std::invalid_argument("Failed to construct signature. axisCount out of range.");
+        }
+        extractMetric(metric, axisCount);
     }
 
     // Takes a metric and extracts values to p q and r; TO DO extend to non-diagonal metric
-    constexpr void extractMetric(const Metric metric) {
+    constexpr void extractMetric(const Metric &metric, const int axisCount) {
         // Build temp axis counts
         int p = 0;
         int q = 0;
         int r = 0;
         // Count axis
-        for (int i : metric) {
-            switch (i) {
-                case 1: p++; break;
-                case -1: q++; break;
-                default: r++; break;
+        for (int i = 0; i < axisCount; i++) {
+            switch (metric[i]) {
+                case 1: ++p; break;
+                case -1: ++q; break;
+                default: ++r; break;
             }
         }
         // Assign extracted values
@@ -115,30 +119,29 @@ public:
 
     // Takes p q and r and constructs a diagonal metric; TO DO extend to non-diagonal metric
     constexpr bool buildMetric(const int p, const int q, const int r) {
-        // Ensure no mask overlap
-        if (p + q + r != ALGEBRA_DIMENSIONS)
+        // Ensure does not exceed max
+        if (p + q + r > MAX_DIMENSIONS)
             return false;
         // Create blank metric and iterator
         Metric metric = {};
         int i = 0;
         // Assign positive axis
-        for (int n = 0; n < p; n++) {
-            metric[i] = 1;
-            i++;
+        for (int n = 0; n < p; ++n) {
+            metric[i++] = 1;
         }
         // Assign negative axis
-        for (int n = 0; n < q; n++) {
-            metric[i] = -1;
-            i++;
+        for (int n = 0; n < q; ++n) {
+            metric[i++] = -1;
         }
         // Assign null axis
-        for (int n = 0; n < r; n++) {
-            metric[i] = 0;
-            i++;
+        for (int n = 0; n < r; ++n) {
+            metric[i++] = 0;
         }
         // Assign metric
         metric_ = metric;
-        extractMetric(metric_);
+        // Assign extracted values
+        p_ = p; q_ = q; r_ = r;
+        dimensionsUsed_ = p_ + q_ + r_;
         return true;
     }
 
@@ -149,40 +152,38 @@ public:
             return false;
         // Create blank metric
         Metric metric = {};
+        int n = 0;
         // Assign positive axis
-        for (int i = 0; i < ALGEBRA_DIMENSIONS; i++) {
+        for (int i = 0; i < MAX_DIMENSIONS; ++i) {
             if (pMask[i]) {
                 metric[i] = 1;
+                ++n;
             }
         }
         // Assign negative axis
-        for (int i = 0; i < ALGEBRA_DIMENSIONS; i++) {
+        for (int i = 0; i < MAX_DIMENSIONS; ++i) {
             if (qMask[i]) {
                 metric[i] = -1;
+                ++n;
             }
         }
         // Assign null axis
-        for (int i = 0; i < ALGEBRA_DIMENSIONS; i++) {
+        for (int i = 0; i < MAX_DIMENSIONS; ++i) {
             if (rMask[i]) {
                 metric[i] = 0;
+                ++n;
             }
         }
         // Assign metric
         metric_ = metric;
-        extractMetric(metric_);
+        extractMetric(metric_, n);
         return true;
     }
 
     // Validates that p q and r masks do not overlap
     static constexpr bool validateMasks(const Mask pMask, const Mask qMask, const Mask rMask) {
-        for (int i = 0; i < ALGEBRA_DIMENSIONS; i++) {
-            if (pMask[i] && qMask[i] == true) {
-                return false;
-            }
-            if (pMask[i] && rMask[i] == true) {
-                return false;
-            }
-            if (qMask[i] && rMask[i] == true) {
+        for (int i = 0; i < MAX_DIMENSIONS; ++i) {
+            if ((pMask[i] && qMask[i]) || (pMask[i] && rMask[i]) || (qMask[i] && rMask[i])) {
                 return false;
             }
         }

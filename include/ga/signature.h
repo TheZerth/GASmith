@@ -28,7 +28,7 @@
 namespace ga {
 
 // Maximum number of dimensions supported by the algebra. (Capacity, not always fully used)
-static constexpr int MAX_DIMENSIONS = 5; // Almost all use cases are in 3,4 or 5 dimensions. Limiting to 5 for cga(3) support.
+static constexpr int MAX_DIMENSIONS = 8; // Almost all use cases are in 3,4 or 5 dimensions. Limiting to 8 for extra support.
 // If performing clifford CL(p,q) analysis, exotic spaces analysis or quantum information analysis, adjust MAX_DIMENSIONS as needed.
 // Increasing will have significant impact on performance the signature is used to generate the blades and the algebras.
 // Blades are defined by 2^n where n is # of dimensions.
@@ -36,6 +36,7 @@ static constexpr int MAX_DIMENSIONS = 5; // Almost all use cases are in 3,4 or 5
 // For 3D CGA: 2^5, 32, doable
 // For Conformal Space Time: 2^6, 64, medium
 // Exotic Space: 2^16, 65536 coefficients, HARD
+// DO NOT EXCEED 16, our dense storage system will not work beyond 16D. Need to change to sparse storage if above 16D.
 
 using Metric = std::array<int, MAX_DIMENSIONS>;
 using Mask = std::array<bool, MAX_DIMENSIONS>;

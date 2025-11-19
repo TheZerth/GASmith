@@ -2,5 +2,7 @@
 
 #include <iostream>
 
-void hello() {
-    std::cout << "Hello, World!" << std::end
+void hello()
+{
+    std::cout << "Hello, World!" << std::endl;
+}

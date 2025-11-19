@@ -60,7 +60,6 @@ FetchContent_MakeAvailable(benchmark)
 add_executable(GASmith_bench
         benchmarks/benchmark_signature.cpp
         benchmarks/benchmark_signature.cpp
-        benchmarks/benchmark_signature.h
 )
 
 target_link_libraries(GASmith_bench

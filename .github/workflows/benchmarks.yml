@@ -1,0 +1,38 @@
+name: GASmith Benchmarks
+
+on:
+  workflow_dispatch:    # manual trigger
+  push:
+    branches:
+      - main            # or whatever your main branch is
+
+jobs:
+  run-benchmarks:
+    runs-on: ubuntu-latest
+
+    # Pull values from GitHub Repo Variables and Secrets
+    env:
+      INFLUXDB_HOST: ${{ vars.INFLUXDB_HOST }}
+      INFLUXDB_ORG: ${{ vars.INFLUXDB_ORG }}
+      INFLUXDB_DATABASE: ${{ vars.INFLUXDB_DATABASE }}
+      INFLUXDB_TOKEN: ${{ secrets.INFLUXDB_TOKEN }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build g++ python3-pip
+          pip3 install influxdb3-python
+
+      - name: Configure CMake (Release)
+        run: |
+          cmake -S . -B build \
+            -G "Ninja" \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build and run benchmarks (uploads to InfluxDB)
+        run: |
+          cmake --build build --target run_benchmarks --config Release

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.28)
 project(GASmith LANGUAGES CXX)
 # Ensure Python support for automated benchmarking
 find_package(Python3 COMPONENTS Interpreter REQUIRED)

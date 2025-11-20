@@ -73,7 +73,7 @@ target_link_libraries(GASmith_bench
 # ------------------------------------------------------------------------------
 
 # Get timestamp
-string(TIMESTAMP TIME_TAG "%Y-%m-%d")
+string(TIMESTAMP TIME_TAG "%Y-%m-%d_%H_M_%S")
 
 # Benchmarks will be written to: <build-dir>/benchmarks/latest.json
 set(GASMITH_BENCH_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/results/)

@@ -166,24 +166,21 @@ public:
         dimensionsUsed_ = 0;
         p_ = 0, q_ = 0, r_ = 0;
         for (int i = 0; i < MAX_DIMENSIONS; ++i) {
-
-            // Assign positive axis
             if (pMask[i]) {
                 metric[i] = 1;
-                ++n, ++p_, ++dimensionsUsed_;
-            }
-
-            // Assign negative axis
-            if (qMask[i]) {
+                ++p_;
+            } else if (qMask[i]) {
                 metric[i] = -1;
-                ++n, ++p_, ++dimensionsUsed_;
+                ++q_;
+            } else if (rMask[i]) {
+                metric[i] = 0;
+                ++r_;
+            } else {
+                continue; // ? maybe
             }
 
-            // Assign null axis
-            if (rMask[i]) {
-                metric[i] = 0;
-                ++n, ++p_, ++dimensionsUsed_;
-            }
+            // im unsure about this as I dont understand the data structure but my understanding is this increments regardless right?
+            ++dimensionsUsed_;
         }
 
         // Assign metric

@@ -36,59 +36,61 @@ struct Blade {
     BladeMask mask{};
     int sign{}; // 0 for zero blade, + or - for oriented blade
 
-// --- HELPER FUNCTIONS ---
+    // --- HELPER FUNCTIONS ---
 
-[[nodiscard]] constexpr int getGrade(const BladeMask mask) {
-    return __builtin_popcount(mask);
-}
-
-[[nodiscard]] constexpr bool hasAxis(BladeMask mask, int i) {
-    bool result = false;
-    if (i >=0 && i < 8) {
-        result = (mask & (BladeMask(1u) << i)) != 0; // does mask contain bit i?
+    // Return # of true bits in the mask
+    [[nodiscard]] static constexpr int getGrade(const BladeMask mask) {
+        return __builtin_popcount(mask);
     }
-    return result;
-}
 
-[[nodiscard]] constexpr Blade getBasis(int axisIndex) {
-    return (BladeMask(1u) << axisIndex, 1);
-}
+    [[nodiscard]] static constexpr bool hasAxis(const BladeMask mask, const int i) {
+        bool result = false;
+        if (i >=0 && i < 8) {
+            result = (mask & (static_cast<BladeMask>(1u) << i)) != 0; // does mask contain bit i?
+        }
+        return result;
+    }
 
-[[nodiscard]] constexpr int highestAxis(BladeMask mask) {
-    return 8 - __builtin_clz(mask); // clz = count leading zeros
-}
+    // Return a basis vector index as a bitmask
+    [[nodiscard]] static constexpr BladeMask getBasis(const int axisIndex) {
+        return static_cast<BladeMask>(1u) << axisIndex; // Shift bit over by index and return
+    }
 
-[[nodiscard]] constexpr bool doesOverlap(BladeMask a, BladeMask b) {
-    return (a & b) != 0;
-}
+    [[nodiscard]] static constexpr int highestAxis(const BladeMask mask) {
+        return 8 - __builtin_clz(mask); // clz = count leading zeros
+    }
 
-[[nodiscard]] constexpr BladeMask addAxis(BladeMask mask, int axisIndex) {
-    return mask | (BladeMask(1u) << axisIndex);
-}
+    [[nodiscard]] static constexpr bool doesOverlap(const BladeMask a, const BladeMask b) {
+        return (a & b) != 0;
+    }
 
-[[nodiscard]] constexpr BladeMask removeAxis(BladeMask mask, int axisIndex) {
-    return mask & ~(BladeMask(1u) << axisIndex);
-}
+    [[nodiscard]] static constexpr BladeMask addAxis(const BladeMask mask, const int axisIndex) {
+        return mask | (static_cast<BladeMask>(1u) << axisIndex);
+    }
 
-[[nodiscard]] constexpr BladeMask toggleAxis(BladeMask mask, int axisIndex) {
-    return mask ^ (BladeMask(1u) << axisIndex);
-}
+    [[nodiscard]] static constexpr BladeMask removeAxis(const BladeMask mask, const int axisIndex) {
+        return mask & ~(static_cast<BladeMask>(1u) << axisIndex);
+    }
+
+    [[nodiscard]] static constexpr BladeMask toggleAxis(const BladeMask mask, const int axisIndex) {
+        return mask ^ (static_cast<BladeMask>(1u) << axisIndex);
+    }
 
 // --- CONSTRUCTORS ---
 
-constexpr Blade() = default;
+    constexpr Blade() = default;
 
-constexpr Blade(BladeMask mask, int sign) : mask(mask), sign(sign) {};
+    constexpr Blade(const BladeMask mask, const int sign) : mask(mask), sign(sign) {};
 
-constexpr Blade makeBlade(const int* basis, int numBasis) {
+    static constexpr Blade makeBlade(const int* basis, const int numBasis) {
     if (numBasis <= 0) {
-        return Blade(BladeMask(0), 1); // Scalar
+        return {static_cast<BladeMask>(0), 1}; // Scalar
     }
     if (numBasis > MAX_DIMENSIONS) {
-        return Blade(BladeMask(0), 0); // Treat as zero blade for safety
+        return {static_cast<BladeMask>(0), 0}; // Treat as zero blade for safety
     }
     if (!basis) {
-        return Blade(BladeMask(0), 0);
+        return {static_cast<BladeMask>(0), 0};
     }
 
     // Create empty blade
@@ -103,19 +105,16 @@ constexpr Blade makeBlade(const int* basis, int numBasis) {
 
     int swaps = 0;
 
-    // selection sort + swap count
-    for (int i = 0; i + 1 < numBasis; ++i) {
-        int minIdx = i;
-        for (int j = i + 1; j < numBasis; ++j) {
-            if (tempBasis[static_cast<std::size_t>(j)]
-                < tempBasis[static_cast<std::size_t>(minIdx)]) {
-                minIdx = j;
-                }
-        }
-        if (minIdx != i) {
-            std::swap(tempBasis[static_cast<std::size_t>(i)],
-                      tempBasis[static_cast<std::size_t>(minIdx)]);
-            ++swaps;
+    // bubble sort + swap count
+    for (int i = 0; i < numBasis - 1; ++i) {
+        for (int j = 0; j < numBasis - 1 - i; ++j) {
+            if (tempBasis[j] > tempBasis[j + 1]) {
+                std::swap(tempBasis[j], tempBasis[j + 1]);
+                ++swaps;
+            } else if (tempBasis[j] == tempBasis[i]) {
+                // Duplicate axis → wedge is zero
+                return Blade{static_cast<BladeMask>(0), 0};
+            }
         }
     }
 
@@ -125,7 +124,7 @@ constexpr Blade makeBlade(const int* basis, int numBasis) {
     for (int i = 0; i < numBasis; ++i) {
         const int idx = basis[static_cast<std::size_t>(i)];
         // optional: bounds check 0 <= idx < MAX_DIMENSIONS
-        mask |= BladeMask(1u << idx);
+        mask |= static_cast<BladeMask>(1u << idx);
     }
     result.mask = mask;
     return result;

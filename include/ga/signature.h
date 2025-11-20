@@ -162,37 +162,30 @@ public:
         // Create blank metric
         Metric metric = {};
         int n = 0;
+
         dimensionsUsed_ = 0;
-        p_ = 0;
-        q_ = 0;
-        r_ = 0;
-        // Assign positive axis
+        p_ = 0, q_ = 0, r_ = 0;
         for (int i = 0; i < MAX_DIMENSIONS; ++i) {
+
+            // Assign positive axis
             if (pMask[i]) {
                 metric[i] = 1;
-                ++n;
-                ++p_;
-                ++dimensionsUsed_;
+                ++n, ++p_, ++dimensionsUsed_;
             }
-        }
-        // Assign negative axis
-        for (int i = 0; i < MAX_DIMENSIONS; ++i) {
+
+            // Assign negative axis
             if (qMask[i]) {
                 metric[i] = -1;
-                ++n;
-                ++q_;
-                ++dimensionsUsed_;
+                ++n, ++p_, ++dimensionsUsed_;
             }
-        }
-        // Assign null axis
-        for (int i = 0; i < MAX_DIMENSIONS; ++i) {
+
+            // Assign null axis
             if (rMask[i]) {
                 metric[i] = 0;
-                ++n;
-                ++r_;
-                ++dimensionsUsed_;
+                ++n, ++p_, ++dimensionsUsed_;
             }
         }
+
         // Assign metric
         metric_ = metric;
         return true;

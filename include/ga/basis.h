@@ -15,10 +15,15 @@
 // Ex: 00000001 = e1, 00000010 = e2, 00000100 = e3
 // 00001010 = e2^e4, 00010100 = e3^e5
 // 00101010 = e1^e2^e3
-// etc...
+// etc... Note that the index is -1 so basis index 0 is e1.
 // A positive blade is represented by a positive coefficient. (e1^e2)
 // A negative blade is represented by a negative coefficient. (-e1^e2=e2^e1)
 // A zero blade is represented by a zero coefficient. (e1^e1=0)
+//
+// Usage Note
+// A blade of {static_cast<BladeMask>(0), 1}; represents the unit scalar basis or "1"
+// A blade of {static_cast<BladeMask>(0), 0}; represents the zero blade or a wedge collapse. Equivalent to 0.
+
 #pragma once
 
 #include <cstdint>
@@ -53,15 +58,33 @@ struct Blade {
 
     // Return a basis vector index as a bitmask
     [[nodiscard]] static constexpr BladeMask getBasis(const int axisIndex) {
+        if (axisIndex < 0 || axisIndex >= MAX_DIMENSIONS) return 0;
         return static_cast<BladeMask>(1u) << axisIndex; // Shift bit over by index and return
     }
 
     [[nodiscard]] static constexpr int highestAxis(const BladeMask mask) {
-        return 8 - __builtin_clz(mask); // clz = count leading zeros
+        if (mask == 0) return -1;
+
+        int highest = -1;
+        for (int i = MAX_DIMENSIONS - 1; i >= 0; --i) {
+            if (mask & (static_cast<BladeMask>(1u) << i)) {
+                highest = i;
+                break;
+            }
+        }
+        return highest;
     }
 
     [[nodiscard]] static constexpr bool doesOverlap(const BladeMask a, const BladeMask b) {
         return (a & b) != 0;
+    }
+
+    [[nodiscard]] static constexpr bool isZero(const Blade blade) {
+        return blade.sign == 0;
+    }
+
+    [[nodiscard]] static constexpr bool isScalarBasis(const Blade blade) {
+        return (blade.mask == 0) && (blade.sign != 0);
     }
 
     [[nodiscard]] static constexpr BladeMask addAxis(const BladeMask mask, const int axisIndex) {
@@ -83,52 +106,91 @@ struct Blade {
     constexpr Blade(const BladeMask mask, const int sign) : mask(mask), sign(sign) {};
 
     static constexpr Blade makeBlade(const int* basis, const int numBasis) {
-    if (numBasis <= 0) {
-        return {static_cast<BladeMask>(0), 1}; // Scalar
-    }
-    if (numBasis > MAX_DIMENSIONS) {
-        return {static_cast<BladeMask>(0), 0}; // Treat as zero blade for safety
-    }
-    if (!basis) {
-        return {static_cast<BladeMask>(0), 0};
-    }
+        if (numBasis <= 0) {
+            return {static_cast<BladeMask>(0), 1}; // Scalar
+        }
+        if (numBasis > MAX_DIMENSIONS) {
+            return {static_cast<BladeMask>(0), 0}; // Treat as zero blade for safety
+        }
+        if (!basis) {
+            return {static_cast<BladeMask>(0), 0};
+        }
 
-    // Create empty blade
-    Blade result{};
-    // Create buffer for sorting
-    std::array<int, MAX_DIMENSIONS> tempBasis{};
+        // Create empty blade
+        Blade result{};
+        // Create buffer for sorting
+        std::array<int, MAX_DIMENSIONS> tempBasis{};
 
-    // copy into local buffer
-    for (int i = 0; i < numBasis; ++i) {
-        tempBasis[i] = basis[i];
-    }
+        // copy into local buffer
+        for (int i = 0; i < numBasis; ++i) {
+            tempBasis[i] = basis[i];
+        }
 
-    int swaps = 0;
+        int swaps = 0;
 
-    // bubble sort + swap count
-    for (int i = 0; i < numBasis - 1; ++i) {
-        for (int j = 0; j < numBasis - 1 - i; ++j) {
-            if (tempBasis[j] > tempBasis[j + 1]) {
-                std::swap(tempBasis[j], tempBasis[j + 1]);
-                ++swaps;
-            } else if (tempBasis[j] == tempBasis[i]) {
-                // Duplicate axis → wedge is zero
-                return Blade{static_cast<BladeMask>(0), 0};
+        // bubble sort + swap count
+        for (int i = 0; i < numBasis - 1; ++i) {
+            for (int j = 0; j < numBasis - 1 - i; ++j) {
+                if (tempBasis[j] > tempBasis[j + 1]) {
+                    std::swap(tempBasis[j], tempBasis[j + 1]);
+                    ++swaps;
+                } else if (tempBasis[j] == tempBasis[j + 1]) {
+                    // Duplicate axis → wedge is zero
+                    return Blade{static_cast<BladeMask>(0), 0};
+                }
             }
         }
+
+        // parity of swaps → sign
+        result.sign = (swaps % 2 == 0) ? +1 : -1;
+        uint8_t mask = 0;
+        for (int i = 0; i < numBasis; ++i) {
+            const int idx = tempBasis[i];
+            // optional: bounds check 0 <= idx < MAX_DIMENSIONS
+            mask |= static_cast<BladeMask>(1u << idx);
+        }
+        result.mask = mask;
+        return result;
     }
 
-    // parity of swaps → sign
-    result.sign = (swaps % 2 == 0) ? +1 : -1;
-    uint8_t mask = 0;
-    for (int i = 0; i < numBasis; ++i) {
-        const int idx = basis[static_cast<std::size_t>(i)];
-        // optional: bounds check 0 <= idx < MAX_DIMENSIONS
-        mask |= static_cast<BladeMask>(1u << idx);
+    static constexpr Blade combineBlade(const Blade a, const Blade b) {
+        // Zero blade in, zero out
+        if (isZero(a) || isZero(b)) {
+            return Blade{static_cast<BladeMask>(0), 0};
+        }
+
+        // Scalar basis identity: 1 ^ B = B,  B ^ 1 = B
+        if (isScalarBasis(a)) {
+            return Blade{b.mask, a.sign * b.sign};
+        }
+        if (isScalarBasis(b)) {
+            return Blade{a.mask, a.sign * b.sign};
+        }
+
+        // Overlap -> wedge = 0
+        if (doesOverlap(a.mask, b.mask)) {
+            return Blade{static_cast<BladeMask>(0), 0};
+        }
+
+        const BladeMask resultMask = a.mask ^ b.mask; // Blades are already sorted so if no overlaps just superimpose.
+
+        // Compute parity: how many "swaps" needed to move b's axes past a's axes.
+        // This is the same as your wedgeParity(..) function if you have one.
+        int swaps = 0;
+        for (int j = 0; j < MAX_DIMENSIONS; ++j) {
+            if (!hasAxis(b.mask, j)) continue;
+            for (int i = j + 1; i < MAX_DIMENSIONS; ++i) {
+                if (hasAxis(a.mask, i)) {
+                    ++swaps;
+                }
+            }
+        }
+
+        const int paritySign = (swaps % 2 == 0) ? +1 : -1;
+        const int resultSign = a.sign * b.sign * paritySign;
+
+        return Blade{resultMask, resultSign};
     }
-    result.mask = mask;
-    return result;
-}
 
 };
 

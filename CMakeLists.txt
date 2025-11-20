@@ -59,7 +59,6 @@ FetchContent_MakeAvailable(benchmark)
 # You will create this file: benchmarks/benchmark_signature.cpp
 add_executable(GASmith_bench
         benchmarks/benchmark_signature.cpp
-        benchmarks/benchmark_signature.cpp
 )
 
 target_link_libraries(GASmith_bench
@@ -73,9 +72,12 @@ target_link_libraries(GASmith_bench
 # Custom target to run benchmarks and store results
 # ------------------------------------------------------------------------------
 
+# Get timestamp
+string(TIMESTAMP TIME_TAG "%Y-%m-%d")
+
 # Benchmarks will be written to: <build-dir>/benchmarks/latest.json
-set(GASMITH_BENCH_OUTPUT_DIR ${CMAKE_BINARY_DIR}/benchmarks)
-set(GASMITH_BENCH_OUTPUT_FILE ${GASMITH_BENCH_OUTPUT_DIR}/latest.json)
+set(GASMITH_BENCH_OUTPUT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/results/)
+set(GASMITH_BENCH_OUTPUT_FILE ${GASMITH_BENCH_OUTPUT_DIR}/bench-${CMAKE_BUILD_TYPE}-${TIME_TAG}.json)
 
 add_custom_target(run_benchmarks
         COMMAND ${CMAKE_COMMAND} -E make_directory ${GASMITH_BENCH_OUTPUT_DIR}

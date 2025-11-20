@@ -29,107 +29,94 @@
 namespace ga {
 
 // You must change the BladeMask type to match your architecture. See signature.h and ensure it matches MAX_DIMENSIONS.
-using BladeMask = std::uint8_t;
+    using BladeMask = std::uint8_t;
 
 // Canonical Basis Blade
-struct Blade {
-    BladeMask mask{};
-    int sign{}; // 0 for zero blade, + or - for oriented blade
-};
+    struct Blade {
+        BladeMask mask{};
+        int sign{}; // 0 for zero blade, + or - for oriented blade
+
+        constexpr Blade() = default;
+
+        constexpr Blade(BladeMask mask, int sign) : mask(mask), sign(sign) {}
+    };
 
 // --- HELPER FUNCTIONS ---
 
-[[nodiscard]] constexpr int getGrade(const BladeMask mask) {
-    return __builtin_popcount(mask);
-}
-
-[[nodiscard]] constexpr bool hasAxis(BladeMask mask, int i) {
-    bool result = false;
-    if (i >=0 && i < 8) {
-        result = (mask & (BladeMask(1u) << i)) != 0; // does mask contain bit i?
-    }
-    return result;
-}
-
-[[nodiscard]] constexpr Blade getBasis(int axisIndex) {
-    return (BladeMask(1u) << axisIndex, 1);
-}
-
-[[nodiscard]] constexpr int highestAxis(BladeMask mask) {
-    return 8 - __builtin_clz(mask); // clz = count leading zeros
-}
-
-[[nodiscard]] constexpr bool doesOverlap(BladeMask a, BladeMask b) {
-    return (a & b) != 0;
-}
-
-[[nodiscard]] constexpr BladeMask addAxis(BladeMask mask, int axisIndex) {
-    return mask | (BladeMask(1u) << axisIndex);
-}
-
-[[nodiscard]] constexpr BladeMask removeAxis(BladeMask mask, int axisIndex) {
-    return mask & ~(BladeMask(1u) << axisIndex);
-}
-
-[[nodiscard]] constexpr BladeMask toggleAxis(BladeMask mask, int axisIndex) {
-    return mask ^ (BladeMask(1u) << axisIndex);
-}
-
-// --- CONSTRUCTORS ---
-
-constexpr Blade() = default;
-
-constexpr Blade(BladeMask mask, int sign) : mask(mask), sign(sign) {}
-
-constexpr Blade makeBlade(const int* basis, int numBasis) {
-    if (numBasis <= 0) {
-        return Blade(BladeMask(0), 1); // Scalar
-    }
-    if (numBasis > MAX_DIMENSIONS) {
-        return Blade(BladeMask(0), 0); // Treat as zero blade for safety
-    }
-    if (!basis) {
-        return Blade(BladeMask(0), 0);
+    [[nodiscard]] constexpr int getGrade(const BladeMask mask) {
+        return __builtin_popcount(mask);
     }
 
-    // Create empty blade
-    Blade result{};
-    // Create buffer for sorting
-    std::array<int, MAX_DIMENSIONS> tempBasis{};
-
-    // copy into local buffer
-    for (int i = 0; i < numBasis; ++i) {
-        tempBasis[i] = basis[i];
+    [[nodiscard]] constexpr bool hasAxis(BladeMask mask, int i) {
+        bool result = false;
+        if (i >= 0 && i < 8) {
+            result = (mask & (BladeMask(1u) << i)) != 0; // does mask contain bit i?
+        }
+        return result;
     }
 
-    int swaps = 0;
+    [[nodiscard]] constexpr Blade getBasis(int axisIndex) {
+        return (BladeMask(1u) << axisIndex, 1);
+    }
 
-    // selection sort + swap count
-    for (int i = 0; i + 1 < numBasis; ++i) {
-        int minIdx = i;
-        for (int j = i + 1; j < numBasis; ++j) {
-            if (tempBasis[static_cast<std::size_t>(j)]
-                < tempBasis[static_cast<std::size_t>(minIdx)]) {
-                minIdx = j;
+    [[nodiscard]] constexpr int highestAxis(BladeMask mask) {
+        return 8 - __builtin_clz(mask); // clz = count leading zeros
+    }
+
+    [[nodiscard]] constexpr bool doesOverlap(BladeMask a, BladeMask b) {
+        return (a & b) != 0;
+    }
+
+    [[nodiscard]] constexpr BladeMask addAxis(BladeMask mask, int axisIndex) {
+        return mask | (BladeMask(1u) << axisIndex);
+    }
+
+    [[nodiscard]] constexpr BladeMask removeAxis(BladeMask mask, int axisIndex) {
+        return mask & ~(BladeMask(1u) << axisIndex);
+    }
+
+    [[nodiscard]] constexpr BladeMask toggleAxis(BladeMask mask, int axisIndex) {
+        return mask ^ (BladeMask(1u) << axisIndex);
+    }
+
+    constexpr Blade makeBlade(const int *basis, int numBasis) {
+        if (!basis || numBasis > MAX_DIMENSIONS)
+            return {BladeMask(0), 0};
+        if (numBasis <= 0)
+            return {BladeMask(0), 1}; // Scalar
+
+
+        // Create empty blade
+        Blade result{};
+        // Create buffer for sorting
+        std::array<int, MAX_DIMENSIONS> tempBasis{};
+
+        // copy into local buffer
+        for (int i = 0; i < numBasis; ++i)
+            tempBasis[i] = basis[i];
+
+        int swaps = 0;
+        for (int i = 0; i < numBasis - 1; ++i) {
+            for (int j = 0; j < numBasis - 1 - i; ++j) {
+                if (tempBasis[j] > tempBasis[j + 1]) {
+                    std::swap(tempBasis[j], tempBasis[j + 1]);
+                    ++swaps;
                 }
+            }
         }
-        if (minIdx != i) {
-            std::swap(tempBasis[static_cast<std::size_t>(i)],
-                      tempBasis[static_cast<std::size_t>(minIdx)]);
-            ++swaps;
-        }
-    }
 
-    // parity of swaps → sign
-    result.sign = (swaps % 2 == 0) ? +1 : -1;
-    uint8_t mask = 0;
-    for (int i = 0; i < numBasis; ++i) {
-        const int idx = basis[static_cast<std::size_t>(i)];
-        // optional: bounds check 0 <= idx < MAX_DIMENSIONS
-        mask |= BladeMask(1u << idx);
+        // parity of swaps → sign
+        result.sign = (swaps % 2 == 0) ? +1 : -1;
+
+        uint8_t mask = 0;
+        for (int i = 0; i < numBasis; ++i) {
+            const int idx = basis[static_cast<std::size_t>(i)];
+            // optional: bounds check 0 <= idx < MAX_DIMENSIONS
+            mask |= BladeMask(1u << idx);
+        }
+
+        result.mask = mask;
+        return result;
     }
-    result.mask = mask;
-    return result;
-}
 
 }

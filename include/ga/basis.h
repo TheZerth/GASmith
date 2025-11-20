@@ -35,7 +35,6 @@ using BladeMask = std::uint8_t;
 struct Blade {
     BladeMask mask{};
     int sign{}; // 0 for zero blade, + or - for oriented blade
-};
 
 // --- HELPER FUNCTIONS ---
 
@@ -79,7 +78,7 @@ struct Blade {
 
 constexpr Blade() = default;
 
-constexpr Blade(BladeMask mask, int sign) : mask(mask), sign(sign) {}
+constexpr Blade(BladeMask mask, int sign) : mask(mask), sign(sign) {};
 
 constexpr Blade makeBlade(const int* basis, int numBasis) {
     if (numBasis <= 0) {
@@ -131,5 +130,7 @@ constexpr Blade makeBlade(const int* basis, int numBasis) {
     result.mask = mask;
     return result;
 }
+
+};
 
 }

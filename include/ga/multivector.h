@@ -1,4 +1,11 @@
 #pragma once
+#include "algebra.h"
+#include "storageDense.h"
+
+using ga::Algebra;
+using ga::DenseStorage;
+
+namespace ga {
 
 struct Multivector {
     const Algebra* alg;     // pointer to algebra descriptor
@@ -10,3 +17,6 @@ struct Multivector {
     double component(BladeMask m) const { return storage[m]; }
     void setComponent(BladeMask m, double value) { storage[m] = value; }
 };
+
+}
+

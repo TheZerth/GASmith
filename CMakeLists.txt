@@ -126,6 +126,7 @@ add_executable(GASmith_bench
         benchmarks/ga_bench_init.cpp
         benchmarks/benchmark_basis.cpp
         benchmarks/benchmark_blade.cpp
+        benchmarks/benchmark_multivector.cpp
 )
 
 target_link_libraries(GASmith_bench

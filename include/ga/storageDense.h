@@ -1,5 +1,7 @@
 #pragma once
 
+namespace ga {
+
 struct DenseStorage {
     std::vector<double> data;
 
@@ -13,3 +15,5 @@ struct DenseStorage {
         std::fill(data.begin(), data.end(), 0.0);
     }
 };
+
+}

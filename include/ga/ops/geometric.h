@@ -1,6 +1,10 @@
 #pragma once
+#include "blade.h"
+#include "../multivector.h"
 
-Multivector geometricProduct(const Multivector& A, const Multivector& B) {
+namespace ga::ops {
+
+    Multivector geometricProduct(const Multivector& A, const Multivector& B) {
     Multivector out(*A.alg);
     for (BladeMask i = 0; i < (1u << A.alg->dimensions); ++i) {
         double a = A.storage[i];
@@ -13,7 +17,7 @@ Multivector geometricProduct(const Multivector& A, const Multivector& B) {
             if (b == 0) continue;
 
             Blade bb{j, +1};
-            Blade bc = geometricProductBlade(ba, bb, A.alg->signature);
+            Blade bc = ga::ops::geometricProductBlade(ba, bb, A.alg->signature);
 
             if (!Blade::isZero(bc)) {
                 out.storage[bc.mask] += a * b * bc.sign;
@@ -22,3 +26,6 @@ Multivector geometricProduct(const Multivector& A, const Multivector& B) {
     }
     return out;
 }
+
+}
+

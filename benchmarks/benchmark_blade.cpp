@@ -44,13 +44,13 @@ static void BM_geometricProductBlade_Euclidean3(benchmark::State& state) {
     Blade e123 = make_trivector(0, 1, 2);
 
     for (auto _ : state) {
-        benchmark::DoNotOptimize(ga::geometricProductBlade(e1, e1, sig));   // e1*e1 = +1
-        benchmark::DoNotOptimize(ga::geometricProductBlade(e1, e2, sig));   // e1*e2 = e12
-        benchmark::DoNotOptimize(ga::geometricProductBlade(e2, e1, sig));   // e2*e1 = -e12
-        benchmark::DoNotOptimize(ga::geometricProductBlade(e12, e3, sig));  // bivector * vector
-        benchmark::DoNotOptimize(ga::geometricProductBlade(e3, e12, sig));  // vector * bivector
-        benchmark::DoNotOptimize(ga::geometricProductBlade(e12, e23, sig)); // bivector * bivector
-        benchmark::DoNotOptimize(ga::geometricProductBlade(e123, e1, sig)); // pseudoscalar * vector
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(e1, e1, sig));   // e1*e1 = +1
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(e1, e2, sig));   // e1*e2 = e12
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(e2, e1, sig));   // e2*e1 = -e12
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(e12, e3, sig));  // bivector * vector
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(e3, e12, sig));  // vector * bivector
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(e12, e23, sig)); // bivector * bivector
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(e123, e1, sig)); // pseudoscalar * vector
     }
 }
 BENCHMARK(BM_geometricProductBlade_Euclidean3);
@@ -75,13 +75,13 @@ static void BM_geometricProductBlade_STA(benchmark::State& state) {
 
     for (auto _ : state) {
         // Time-like vs spatial-like products (mix of +1 and -1 metric entries)
-        benchmark::DoNotOptimize(ga::geometricProductBlade(e0, e0, sig));   // e0*e0 = +1
-        benchmark::DoNotOptimize(ga::geometricProductBlade(e1, e1, sig));   // e1*e1 = -1
-        benchmark::DoNotOptimize(ga::geometricProductBlade(e0, e1, sig));   // e0*e1
-        benchmark::DoNotOptimize(ga::geometricProductBlade(e1, e0, sig));   // e1*e0
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(e0, e0, sig));   // e0*e0 = +1
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(e1, e1, sig));   // e1*e1 = -1
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(e0, e1, sig));   // e0*e1
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(e1, e0, sig));   // e1*e0
 
-        benchmark::DoNotOptimize(ga::geometricProductBlade(e01, e23, sig)); // bivector * bivector
-        benchmark::DoNotOptimize(ga::geometricProductBlade(e0123, e0, sig));// trivector * vector
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(e01, e23, sig)); // bivector * bivector
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(e0123, e0, sig));// trivector * vector
     }
 }
 BENCHMARK(BM_geometricProductBlade_STA);
@@ -103,10 +103,10 @@ static void BM_geometricProductBlade_PGA3D(benchmark::State& state) {
     Blade e2Inf = make_bivector(2, 3);
 
     for (auto _ : state) {
-        benchmark::DoNotOptimize(ga::geometricProductBlade(e0, e0, sig));     // e0*e0 = +1
-        benchmark::DoNotOptimize(ga::geometricProductBlade(eInf, eInf, sig)); // eInf*eInf = 0
-        benchmark::DoNotOptimize(ga::geometricProductBlade(e0, eInf, sig));   // mixed null / Euclidean
-        benchmark::DoNotOptimize(ga::geometricProductBlade(e01, e2Inf, sig)); // bivector * bivector
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(e0, e0, sig));     // e0*e0 = +1
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(eInf, eInf, sig)); // eInf*eInf = 0
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(e0, eInf, sig));   // mixed null / Euclidean
+        benchmark::DoNotOptimize(ga::ops::geometricProductBlade(e01, e2Inf, sig)); // bivector * bivector
     }
 }
 BENCHMARK(BM_geometricProductBlade_PGA3D);

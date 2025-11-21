@@ -51,7 +51,7 @@ static void BM_MV_geometric_Euclidean3(benchmark::State& state) {
     Multivector B = make_simple_mv(alg);
 
     for (auto _ : state) {
-        benchmark::DoNotOptimize( geometricProduct(A, B) );
+        benchmark::DoNotOptimize(ga::ops::geometricProduct(A, B) );
     }
 }
 BENCHMARK(BM_MV_geometric_Euclidean3);
@@ -68,7 +68,7 @@ static void BM_MV_geometric_STA(benchmark::State& state) {
     Multivector B = make_simple_mv(alg);
 
     for (auto _ : state) {
-        benchmark::DoNotOptimize( geometricProduct(A, B) );
+        benchmark::DoNotOptimize(ga::ops::geometricProduct(A, B) );
     }
 }
 BENCHMARK(BM_MV_geometric_STA);
@@ -85,7 +85,7 @@ static void BM_MV_geometric_PGA3D(benchmark::State& state) {
     Multivector B = make_simple_mv(alg);
 
     for (auto _ : state) {
-        benchmark::DoNotOptimize( geometricProduct(A, B) );
+        benchmark::DoNotOptimize(ga::ops::geometricProduct(A, B) );
     }
 }
 BENCHMARK(BM_MV_geometric_PGA3D);

@@ -2,7 +2,7 @@
 #include "../basis.h"
 #include "../signature.h"
 
-namespace ga {
+namespace ga::ops {
 
     using Blade     = ga::Blade;
     using Signature = ga::Signature;

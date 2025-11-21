@@ -1,12 +1,18 @@
 #pragma once
 #include "../basis.h"
 #include "../signature.h"
+#include <bit>
 
 namespace ga::ops {
 
     using Blade     = ga::Blade;
+    using BladeMask = ga::BladeMask;
     using Signature = ga::Signature;
 
+    // Robust Clifford geometric product of two basis blades.
+    // Uses bitmask operations to compute:
+    //   - sign from the relative ordering of basis vectors
+    //   - metric contraction on overlapping axes via Signature::getSign(i)
     inline Blade geometricProductBlade(const Blade& a,
                                        const Blade& b,
                                        const Signature& sig)
@@ -16,81 +22,76 @@ namespace ga::ops {
             return Blade{static_cast<BladeMask>(0), 0};
         }
 
-        // Quick scalar identity cases
+        // Scalars act as identity
         if (Blade::isScalarBasis(a)) {
-            // (scalar * B) = scalar times B
             return Blade{b.mask, a.sign * b.sign};
         }
         if (Blade::isScalarBasis(b)) {
-            // (A * scalar) = scalar times A
             return Blade{a.mask, a.sign * b.sign};
         }
 
-        // Extract basis indices into arrays (sorted since your blades are canonical)
-        int listA[MAX_DIMENSIONS];
-        int listB[MAX_DIMENSIONS];
-        int lenA = 0;
-        int lenB = 0;
+        const int dims = sig.dimensionsUsed();
+        const BladeMask am = a.mask;
+        const BladeMask bm = b.mask;
 
-        for (int i = 0; i < MAX_DIMENSIONS; ++i) {
-            if (Blade::hasAxis(a.mask, i)) {
-                listA[lenA++] = i;
-            }
-            if (Blade::hasAxis(b.mask, i)) {
-                listB[lenB++] = i;
+        // --------------------------------------------------------------------
+        // 1. Sign from relative ordering (wedge part)
+        // Count how many times a basis from B with smaller index would need to
+        // "pass through" a basis from A.
+        // This is the standard formula:
+        //
+        //   swaps = sum_{i in A} popcount( B & ((1 << i) - 1) )
+        //
+        int swapCount = 0;
+        for (int i = 0; i < dims; ++i) {
+            if (Blade::hasAxis(am, i)) {
+                BladeMask lowerMask = static_cast<BladeMask>((1u << i) - 1u);
+                BladeMask lowerInB = static_cast<BladeMask>(bm & lowerMask);
+                swapCount += std::popcount(static_cast<unsigned int>(lowerInB));
             }
         }
+        int sign = a.sign * b.sign * ((swapCount % 2 == 0) ? +1 : -1);
 
-        int sign = a.sign * b.sign;
-        BladeMask resultMask = 0;
-
-        int i = 0;
-        int j = 0;
-
-        // Core Clifford merge
-        while (i < lenA && j < lenB) {
-            const int ia = listA[i];
-            const int jb = listB[j];
-
-            if (ia == jb) {
-                // Matching axis: e_i e_i = g_ii
-                sign *= sig.getSign(ia);   // could be +1, -1, or 0
-                ++i;
-                ++j;
-            } else if (ia < jb) {
-                // Take from A directly
-                resultMask |= Blade::getBasis(ia);
-                ++i;
-            } else {
-                // jb < ia
-                // Taking from B requires passing this basis through
-                // the remaining ones in A -> possible sign flip
-                const int remainingA = lenA - i;
-                if (remainingA % 2 != 0) {
-                    sign = -sign;
+        // --------------------------------------------------------------------
+        // 2. Metric contraction on overlapping axes
+        //
+        // Any axis present in both blades contracts:
+        //   e_i e_i = g_ii
+        // where g_ii = +1, -1, or 0 (null axis).
+        //
+        // If g_ii == 0 for any overlapping axis, the entire product is zero.
+        //
+        BladeMask overlap = static_cast<BladeMask>(am & bm);
+        for (int i = 0; i < dims; ++i) {
+            if (Blade::hasAxis(overlap, i)) {
+                int gii = sig.getSign(i);  // +1, -1, or 0
+                if (gii == 0) {
+                    // Null direction squared → zero blade
+                    return Blade{static_cast<BladeMask>(0), 0};
                 }
-                resultMask |= Blade::getBasis(jb);
-                ++j;
+                sign *= gii;
             }
         }
 
-        // Append any remaining basis from A or B
-        for (; i < lenA; ++i) {
-            resultMask |= Blade::getBasis(listA[i]);
-        }
-        for (; j < lenB; ++j) {
-            resultMask |= Blade::getBasis(listB[j]);
-        }
+        // --------------------------------------------------------------------
+        // 3. Resulting basis mask
+        //
+        // Overlapping axes are contracted away, so the remaining basis mask is
+        // simply the symmetric difference:
+        //
+        //   resultMask = am XOR bm
+        //
+        BladeMask resultMask = static_cast<BladeMask>(am ^ bm);
 
         if (sign == 0) {
             return Blade{static_cast<BladeMask>(0), 0};
         }
         if (resultMask == 0) {
-            // pure scalar
+            // Pure scalar result
             return Blade{static_cast<BladeMask>(0), sign};
         }
 
         return Blade{resultMask, sign};
     }
 
-} // namespace ga
+} // namespace ga::ops

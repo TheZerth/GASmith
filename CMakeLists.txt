@@ -115,6 +115,7 @@ add_executable(GASmith_tests
         tests/test_geometric_axioms.cpp
         tests/test_wedge_product.cpp
         tests/test_inner_product.cpp
+        tests/test_inner_product.cpp
 )
 
 target_link_libraries(GASmith_tests

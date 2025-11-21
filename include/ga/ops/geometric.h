@@ -4,6 +4,7 @@
 // Implements a full clifford product of two n-dimensional generalized multivectors.
 // Multivecors must share a metric
 
+using ga::BladeMask;
 
 namespace ga::ops {
 

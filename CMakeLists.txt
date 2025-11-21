@@ -31,6 +31,8 @@ add_custom_target(setup_venv
         COMMAND ${GA_VENV_PYTHON} -m pip install --upgrade pip
         COMMAND ${GA_VENV_PYTHON} -m pip install influxdb3-python
         COMMAND ${GA_VENV_PYTHON} -m pip install pandas
+        COMMAND ${GA_VENV_PYTHON} -m pip install python-dotenv
+        COMMAND ${GA_VENV_PYTHON} -m pip install certifi
 
         # Step C: Metadata
         COMMENT "Ensuring .venv exists and packages are installed"

@@ -1,7 +1,42 @@
 cmake_minimum_required(VERSION 3.28)
 project(GASmith LANGUAGES CXX)
+
+# If user provided Python_EXECUTABLE, map it to Python3_EXECUTABLE for FindPython3
+if(DEFINED Python_EXECUTABLE AND NOT DEFINED Python3_EXECUTABLE)
+    set(Python3_EXECUTABLE "${Python_EXECUTABLE}")
+endif()
+
 # Ensure Python support for automated benchmarking
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
+# Setup venv
+set(GA_VENV_DIR "${CMAKE_BINARY_DIR}/.venv")
+
+if (WIN32)
+    # Windows puts executables in Scripts/
+    set(GA_VENV_PYTHON "${GA_VENV_DIR}/Scripts/python.exe")
+    set(GA_VENV_PIP    "${GA_VENV_DIR}/Scripts/pip.exe")
+else()
+    # Linux/macOS puts executables in bin/
+    set(GA_VENV_PYTHON "${GA_VENV_DIR}/bin/python")
+    set(GA_VENV_PIP    "${GA_VENV_DIR}/bin/pip")
+endif()
+# add modules to venv
+add_custom_target(setup_venv
+        # Step A: Create venv if it doesn't exist
+        COMMAND ${CMAKE_COMMAND} -E echo "Checking Python Virtual Environment..."
+        COMMAND ${Python3_EXECUTABLE} -m venv ${GA_VENV_DIR}
+
+        # Step B: Install requirements (Use 'pip install -r requirements.txt' for more packages)
+        COMMAND ${CMAKE_COMMAND} -E echo "Installing dependencies into .venv..."
+        COMMAND ${GA_VENV_PYTHON} -m pip install --upgrade pip
+        COMMAND ${GA_VENV_PYTHON} -m pip install influxdb3-python
+        COMMAND ${GA_VENV_PYTHON} -m pip install pandas
+
+        # Step C: Metadata
+        COMMENT "Ensuring .venv exists and packages are installed"
+        VERBATIM
+)
+
 # Ensure Git for benchmark info
 find_package(Git QUIET)
 
@@ -86,6 +121,7 @@ add_executable(GASmith_bench
         benchmarks/benchmark_signature.cpp
         benchmarks/ga_bench_memory.cpp
         benchmarks/ga_bench_init.cpp
+        benchmarks/benchmark_basis.cpp
 )
 
 target_link_libraries(GASmith_bench
@@ -103,7 +139,7 @@ target_link_libraries(GASmith_bench
 string(TIMESTAMP TIME_TAG "%Y-%m-%d_%H_%M_%S")
 
 set(GASMITH_BENCH_OUTPUT_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/results/)
-set(GASMITH_BENCH_OUTPUT_FILE ${GASMITH_BENCH_OUTPUT_DIR}/bench-${CMAKE_BUILD_TYPE}-${TIME_TAG}.json)
+set(GASMITH_BENCH_OUTPUT_FILE ${GASMITH_BENCH_OUTPUT_DIR}bench-${CMAKE_BUILD_TYPE}-${TIME_TAG}.json)
 
 add_custom_target(run_benchmarks
         COMMAND ${CMAKE_COMMAND} -E make_directory ${GASMITH_BENCH_OUTPUT_DIR}
@@ -116,16 +152,17 @@ add_custom_target(run_benchmarks
         GA_BENCH_GIT_BRANCH=${GA_GIT_BRANCH}
         GA_BENCH_SIGNATURE=${GA_DEFAULT_SIGNATURE}
         GA_BENCH_RUN_ID=bench-${CMAKE_BUILD_TYPE}-${TIME_TAG}
-        GASmith_bench
+        $<TARGET_FILE:GASmith_bench>
         --benchmark_out=${GASMITH_BENCH_OUTPUT_FILE}
         --benchmark_out_format=json
 
         # Upload the JSON to InfluxDB
-        COMMAND ${Python3_EXECUTABLE}
+        # Ensure we use the Python3_EXECUTABLE found by find_package if Python_EXECUTABLE isn't set
+        COMMAND ${GA_VENV_PYTHON}
         ${CMAKE_SOURCE_DIR}/tools/upload_benchmarks_to_influx.py
         --json ${GASMITH_BENCH_OUTPUT_FILE}
 
-        DEPENDS GASmith_bench
+        DEPENDS GASmith_bench setup_venv
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        COMMENT "Running GASmith benchmarks and uploading results from ${GASMITH_BENCH_OUTPUT_FILE}"
+        COMMENT "Running benchmarks with InfluxDB upload (using local .venv)"
 )

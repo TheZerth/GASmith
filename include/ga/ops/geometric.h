@@ -8,59 +8,27 @@ using ga::BladeMask;
 
 namespace ga::ops {
 
-    inline Multivector geometricProduct(const Multivector& A, const Multivector& B) {
-    if (A.alg != B.alg) {
-        throw std::invalid_argument("ga::ops::geometricProduct: Multivectors must share the same Algebra");
-    }
-    if (!A.alg || !B.alg) {
-        throw std::invalid_argument("ga::ops::geometricProduct: Multivectors must have an Algebra");
-    }
-    Multivector out(*A.alg);
-        for (BladeMask i = 0; i < (1u << A.alg->dimensions); ++i) {
-            double a = A.storage[i];
-            if (a == 0) continue;
-
-            Blade ba{i, +1};
-
-            for (BladeMask j = 0; j < (1u << A.alg->dimensions); ++j) {
-                double b = B.storage[j];
-                if (b == 0) continue;
-
-                Blade bb{j, +1};
-                Blade bc = ga::ops::geometricProductBlade(ba, bb, A.alg->signature);
-
-                if (!Blade::isZero(bc)) {
-                    out.storage[bc.mask] += a * b * bc.sign;
-                }
-            }
-        }
-        return out;
-    }
-
-    // A runtime callback type: decides whether a given (gradeA, gradeB, gradeR)
-    // term from the geometric product should be kept.
+    // A runtime callback type: decides whether a given (gradeA, gradeB, gradeR) term from the geometric product should be kept.
     using GradeFilterFn = bool (*)(int gradeA, int gradeB, int gradeR);
 
-    // Non-templated version: do full geometric product, keep only terms where
-    // keep(gradeA, gradeB, gradeR) == true.
+    // Do full geometric product, keep only terms where keep(gradeA, gradeB, gradeR) == true.
     inline Multivector geometricProductFiltered(const Multivector& A,
                                            const Multivector& B,
                                            GradeFilterFn keep)
     {
-        const Algebra* algebraA = A.alg;
-        const Algebra* algebraB = B.alg;
+        const Algebra* algA = A.alg;
+        const Algebra* algB = B.alg;
 
-        if (!algebraA || !algebraB || algebraA != algebraB) {
+        if (!algA || !algB || algA != algB) {
             throw std::invalid_argument(
-                "ga::ops::binaryGradeFiltered: Multivectors must share the same Algebra");
+                "ga::ops::geometricProductCore: Multivectors must share the same Algebra");
         }
 
-        // Both algebras the same, copy for reference.
-        const Algebra* resultAlgebra = algebraA;
-        const int usedDimensions = resultAlgebra->dimensions;
-        const int bladeCount = 1 << usedDimensions;
+        const Algebra* alg = algA;
+        const int dims = alg->dimensions;
+        const int bladeCount = 1 << dims;
 
-        Multivector resultMV(*resultAlgebra);
+        Multivector result(*alg);
 
         for (int i = 0; i < bladeCount; ++i) {
             BladeMask maskA = static_cast<BladeMask>(i);
@@ -68,7 +36,10 @@ namespace ga::ops {
             if (coeffA == 0.0)
                 continue;
 
-            int gradeA = ga::Blade::getGrade(maskA);
+            int gradeA = 0;
+            if (keep) {
+                gradeA = ga::Blade::getGrade(maskA);
+            }
 
             for (int j = 0; j < bladeCount; ++j) {
                 BladeMask maskB = static_cast<BladeMask>(j);
@@ -76,27 +47,38 @@ namespace ga::ops {
                 if (coeffB == 0.0)
                     continue;
 
-                int gradeB = ga::Blade::getGrade(maskB);
+                int gradeB = 0;
+                if (keep) {
+                    gradeB = ga::Blade::getGrade(maskB);
+                }
 
-                Blade bladeA{maskA, +1};
-                Blade bladeB{maskB, +1};
+                Blade a{maskA, +1};
+                Blade b{maskB, +1};
 
-                Blade resultBlade = geometricProductBlade(bladeA, bladeB, resultAlgebra->signature);
-                int gradeR = ga::Blade::getGrade(resultBlade.mask);
-
-                if (!keep(gradeA, gradeB, gradeR))
+                Blade gp = geometricProductBlade(a, b, alg->signature);
+                if (Blade::isZero(gp))
                     continue;
 
-                double contrib = coeffA * coeffB * static_cast<double>(resultBlade.sign);
+                if (keep) {
+                    int gradeR = ga::Blade::getGrade(gp.mask);
+                    if (!keep(gradeA, gradeB, gradeR))
+                        continue;
+                }
+
+                double contrib = coeffA * coeffB * static_cast<double>(gp.sign);
                 if (contrib == 0.0)
                     continue;
 
-                double prev = resultMV.component(resultBlade.mask);
-                resultMV.setComponent(resultBlade.mask, prev + contrib);
+                double prev = result.component(gp.mask);
+                result.setComponent(gp.mask, prev + contrib);
             }
         }
 
-        return resultMV;
+        return result;
+    }
+
+    inline Multivector geometricProduct(const Multivector& A, const Multivector& B) {
+        return geometricProductFiltered(A, B, nullptr);
     }
 
 }

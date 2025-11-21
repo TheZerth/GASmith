@@ -1,50 +1,57 @@
 // C++
-#include <vector>
+#pragma once
 #include <cstdint>
 #include <cassert>
 #include <iostream>
-#include <cstdlib>
+#include <algorithm> // For std::fill
+#include <cstring>   // For memset (optional, faster zeroing)
 
 namespace ga {
 
     struct DenseStorage {
-        std::vector<double> coefficients;
-        uint32_t dimensions;
+        // Hard constraint: Max Dims = 8, so Max Elements = 2^8 = 256
+        static constexpr size_t MAX_ELEMENTS = 256;
 
-        explicit DenseStorage(uint32_t dims) : dimensions(dims) {
-            if (dims >= (sizeof(size_t) * 8)) {
-                std::cerr << "DenseStorage: dims too large: " << dims << "\n";
-                std::abort();
-            }
-            size_t required_size = 1ULL << dims;
-            coefficients.resize(required_size, 0.0);
+        // OPTIMIZATION 1: Use float.
+        // OPTIMIZATION 2: Use a raw array (or std::array) instead of std::vector.
+        // This allocates 1KB of contiguous memory directly inside the struct.
+        // No heap allocation (malloc/new) ever occurs.
+        float coefficients[MAX_ELEMENTS];
+
+        // OPTIMIZATION 3: Use uint8_t for dimensions (max 255)
+        uint8_t dimensions;
+
+        explicit DenseStorage(uint8_t dims) : dimensions(dims) {
+            assert(dims <= 8 && "DenseStorage: dims too large for fixed storage");
+
+            // Fast zeroing of memory.
+            // Since we have a fixed size, we just wipe the whole 1KB.
+            // It's often faster to wipe 1KB linearly than to calculate exactly
+            // how much to wipe for small N.
+            std::memset(coefficients, 0, sizeof(coefficients));
         }
 
-        double& operator[](uint32_t mask) {
-            // Diagnostic: print offending values before aborting
-            if (static_cast<size_t>(mask) >= coefficients.size()) {
-                std::cerr << "DenseStorage::operator[] - mask out of range\n"
-                          << "  mask = " << mask << "\n"
-                          << "  coefficients.size() = " << coefficients.size() << "\n"
-                          << "  dimensions = " << dimensions << "\n";
-                std::abort();
-            }
+        // Non-const access
+        float& operator[](size_t mask) {
+            // Using assert removes the check in Release builds for speed
+            assert(mask < (1ULL << dimensions) && "mask out of range");
             return coefficients[mask];
         }
 
-        const double& operator[](uint32_t mask) const {
-            if (static_cast<size_t>(mask) >= coefficients.size()) {
-                std::cerr << "DenseStorage::operator[] (const) - mask out of range\n"
-                          << "  mask = " << mask << "\n"
-                          << "  coefficients.size() = " << coefficients.size() << "\n"
-                          << "  dimensions = " << dimensions << "\n";
-                std::abort();
-            }
+        // Const access
+        const float& operator[](size_t mask) const {
+            assert(mask < (1ULL << dimensions) && "mask out of range");
             return coefficients[mask];
         }
 
+        // Getter for current actual size used
         size_t size() const {
-            return coefficients.size();
+            return 1ULL << dimensions;
+        }
+
+        // Getter for capacity (always 256)
+        constexpr size_t capacity() const {
+            return MAX_ELEMENTS;
         }
     };
 

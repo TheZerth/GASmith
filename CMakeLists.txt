@@ -97,6 +97,45 @@ target_include_directories(GASmith
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+# Google Unit Tests
+include(FetchContent)
+
+FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/refs/tags/v1.15.2.zip
+)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+
+add_executable(GASmith_tests
+        tests/test_geometric_product.cpp
+        tests/test_geometric_product.cpp
+        tests/test_geometric_axioms.cpp
+)
+
+target_link_libraries(GASmith_tests
+        PRIVATE
+        GASmith
+        GTest::gtest_main
+)
+
+target_include_directories(GASmith_tests
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+include(GoogleTest)
+gtest_discover_tests(GASmith_tests)
+
+add_custom_target(run_tests
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+        DEPENDS GASmith_tests
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Running GASmith unit tests"
+)
+
 # ------------------------------------------------------------------------------
 # Google Benchmark (fetched via FetchContent)
 # ------------------------------------------------------------------------------

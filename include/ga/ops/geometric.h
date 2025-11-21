@@ -4,7 +4,7 @@
 
 namespace ga::ops {
 
-    Multivector geometricProduct(const Multivector& A, const Multivector& B) {
+    inline Multivector geometricProduct(const Multivector& A, const Multivector& B) {
     Multivector out(*A.alg);
     for (BladeMask i = 0; i < (1u << A.alg->dimensions); ++i) {
         double a = A.storage[i];

@@ -29,7 +29,7 @@
 #include <cstdint>
 #include <array>
 
-#define MAX_DIMENSIONS 8
+static constexpr int MAX_DIMENSIONS = 8;
 
 namespace ga {
 

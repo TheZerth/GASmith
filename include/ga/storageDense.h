@@ -1,8 +1,15 @@
-//
-// Created by zerth on 2025-10-18.
-//
+#pragma once
 
-#ifndef GASMITH_STORAGEDENSE_H
-#define GASMITH_STORAGEDENSE_H
+struct DenseStorage {
+    std::vector<double> data;
 
-#endif //GASMITH_STORAGEDENSE_H
+    DenseStorage(int dims)
+        : data(1 << dims, 0.0) {}
+
+    double& operator[](size_t i) { return data[i]; }
+    const double& operator[](size_t i) const { return data[i]; }
+
+    void clear() {
+        std::fill(data.begin(), data.end(), 0.0);
+    }
+};

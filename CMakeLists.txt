@@ -88,6 +88,7 @@ add_library(GASmith STATIC
         include/ga/ops/inner.h
         include/ga/ops/involutions.h
         include/ga/ops/dual.h
+        include/ga/ops/blade.h
 )
 
 # Public headers live in include/
@@ -124,6 +125,7 @@ add_executable(GASmith_bench
         benchmarks/ga_bench_memory.cpp
         benchmarks/ga_bench_init.cpp
         benchmarks/benchmark_basis.cpp
+        benchmarks/benchmark_blade.cpp
 )
 
 target_link_libraries(GASmith_bench

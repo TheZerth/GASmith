@@ -1,8 +1,12 @@
-//
-// Created by zerth on 2025-10-18.
-//
+#pragma once
 
-#ifndef GASMITH_MULTIVECTOR_H
-#define GASMITH_MULTIVECTOR_H
+struct Multivector {
+    const Algebra* alg;     // pointer to algebra descriptor
+    DenseStorage storage;   // coefficients indexed by mask
 
-#endif //GASMITH_MULTIVECTOR_H
+    Multivector(const Algebra& a)
+        : alg(&a), storage(a.dimensions) {}
+
+    double component(BladeMask m) const { return storage[m]; }
+    void setComponent(BladeMask m, double value) { storage[m] = value; }
+};

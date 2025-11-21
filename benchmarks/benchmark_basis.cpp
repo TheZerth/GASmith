@@ -58,5 +58,3 @@ static void BM_combineBlade(benchmark::State& state) {
     }
 }
 BENCHMARK(BM_combineBlade);
-
-BENCHMARK_MAIN();

@@ -1,8 +1,11 @@
-//
-// Created by zerth on 2025-10-18.
-//
+#pragma once
 
-#ifndef GASMITH_ALGEBRA_H
-#define GASMITH_ALGEBRA_H
+namespace ga {
 
-#endif //GASMITH_ALGEBRA_H
+struct Algebra {
+    ga::Signature signature;
+    int dimensions;
+};
+
+
+} // namespace ga

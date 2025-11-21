@@ -77,6 +77,7 @@ namespace ga::ops {
         return result;
     }
 
+    // Just pass null so no filter, return full product.
     inline Multivector geometricProduct(const Multivector& A, const Multivector& B) {
         return geometricProductFiltered(A, B, nullptr);
     }

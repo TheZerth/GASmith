@@ -114,6 +114,7 @@ add_executable(GASmith_tests
         tests/test_geometric_product.cpp
         tests/test_geometric_axioms.cpp
         tests/test_wedge_product.cpp
+        tests/test_inner_product.cpp
 )
 
 target_link_libraries(GASmith_tests
@@ -168,6 +169,7 @@ add_executable(GASmith_bench
         benchmarks/benchmark_blade.cpp
         benchmarks/benchmark_multivector.cpp
         benchmarks/benchmark_wedge.cpp
+        benchmarks/benchmark_inner.cpp
 )
 
 target_link_libraries(GASmith_bench

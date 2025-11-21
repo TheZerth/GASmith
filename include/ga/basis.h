@@ -41,11 +41,11 @@ struct Blade {
     BladeMask mask{};
     int sign{}; // 0 for zero blade, + or - for oriented blade
 
-    // --- HELPER FUNCTIONS ---
 
-    // Return # of true bits in the mask
-    [[nodiscard]] static constexpr int getGrade(const BladeMask mask) {
-        return __builtin_popcount(mask);
+    // --- HELPER FUNCTIONS ---
+    [[nodiscard]] static constexpr int getGrade(BladeMask m) {
+        // BladeMask is uint8_t-compatible; popcount wants a wider integer
+        return std::popcount(static_cast<unsigned int>(m));
     }
 
     [[nodiscard]] static constexpr bool hasAxis(const BladeMask mask, const int i) {

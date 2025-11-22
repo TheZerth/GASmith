@@ -122,6 +122,7 @@ add_executable(GASmith_tests
         tests/test_inner_product.cpp
         tests/test_involutions.cpp
         tests/test_dual.cpp
+        tests/test_versors.cpp
 )
 
 target_link_libraries(GASmith_tests
@@ -179,6 +180,7 @@ add_executable(GASmith_bench
         benchmarks/benchmark_inner.cpp
         benchmarks/benchmark_involutions.cpp
         benchmarks/benchmark_dual.cpp
+        benchmarks/benchmark_versor.cpp
 )
 
 target_link_libraries(GASmith_bench

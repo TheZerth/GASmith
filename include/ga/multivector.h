@@ -1,6 +1,7 @@
 #pragma once
 #include "storageDense.h"
 #include "algebra.h"
+#include "basis.h"
 // A mutlivector is our generalized maths object. It essentially is a combination of a BladeMask and an Algebra metric.
 // The BladeMask defines what axis the multivector contains.
 // The coeffiecients for this mask are coded in the denseStorage which is an array of 256 ints.
@@ -13,6 +14,7 @@ namespace ga {
 
     using ga::Algebra;
     using ga::DenseStorage;
+    using ga::BladeMask;
 
     struct Multivector {
         const Algebra* alg;     // pointer to algebra descriptor

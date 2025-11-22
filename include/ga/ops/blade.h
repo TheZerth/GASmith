@@ -1,5 +1,7 @@
 #pragma once
 #include <bit>
+#include "ga/basis.h"
+#include "ga/signature.h"
 
 namespace ga::ops {
 

@@ -1,8 +1,22 @@
-//
-// Created by zerth on 2025-10-18.
-//
+#pragma once
 
-#ifndef GASMITH_LINEARMAP_H
-#define GASMITH_LINEARMAP_H
+#include "ga/algebra.h"
+#include "ga/multivector.h"
+#include "ga/ops/wedge.h"
 
-#endif //GASMITH_LINEARMAP_H
+namespace ga {
+
+    struct LinearMap {
+        const Algebra* alg;
+        float m[8][8]; // row-major, only dims used
+
+        explicit LinearMap(const Algebra& algebra);
+
+        // L(e_j) = sum_i m[i][j] e_i
+        Multivector applyToVector(const Multivector& v) const;
+
+        // O(2^n) outermorphism: extend to whole multivector
+        Multivector apply(const Multivector& A) const;
+    };
+
+} // namespace ga

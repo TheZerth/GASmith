@@ -21,7 +21,19 @@ Usage:
 3. Include GASmith in your project and start using Geometric Algebra!
 
 Syntax:
-- See the examples folder for usage examples
+```
+#include <GASmith.h>
+
+auto sig = Signature(3,0,0,true);
+Algebra alg(sig);
+
+Multivector e1 = ...; // basis e1
+Multivector e2 = ...; // basis e2
+Rotor R = Rotor::fromPlaneAngle(alg, e1, e2, angle);
+
+Multivector v = ...; // some vector
+Multivector v_rot = R.apply(v);
+```
 
 Contributing:
 1. Fork the repository

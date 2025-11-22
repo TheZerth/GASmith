@@ -73,7 +73,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # ------------------------------------------------------------------------------
 
 add_library(GASmith STATIC
-        library.cpp
         include/ga/signature.h
         include/ga/policies.h
         include/ga/algebra.h
@@ -89,6 +88,8 @@ add_library(GASmith STATIC
         include/ga/ops/involutions.h
         include/ga/ops/dual.h
         include/ga/ops/blade.h
+        GASmith.h
+        GASmith.cpp
 )
 
 # Public headers live in include/

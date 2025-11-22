@@ -1,8 +1,13 @@
-//
-// Created by zerth on 2025-10-18.
-//
+#pragma once
 
-#ifndef GASMITH_POLICIES_H
-#define GASMITH_POLICIES_H
+namespace ga {
 
-#endif //GASMITH_POLICIES_H
+    struct DefaultPolicies {
+        using Scalar = float;
+
+        static constexpr Scalar epsilon() noexcept { return static_cast<Scalar>(1e-6); }
+    };
+
+    using Policies = DefaultPolicies;
+
+} // namespace ga

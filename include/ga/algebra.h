@@ -1,5 +1,6 @@
 // C++
 #pragma once
+#include "ga/signature.h"
 
 namespace ga {
 

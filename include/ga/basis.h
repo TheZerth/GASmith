@@ -23,9 +23,7 @@
 // Usage Note
 // A blade of {static_cast<BladeMask>(0), 1}; represents the unit scalar basis or "1"
 // A blade of {static_cast<BladeMask>(0), 0}; represents the zero blade or a wedge collapse. Equivalent to 0.
-
 #pragma once
-
 #include <cstdint>
 #include <array>
 

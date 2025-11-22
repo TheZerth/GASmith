@@ -7,6 +7,7 @@
 #include "ga/multivector.h"
 #include "ga/ops/geometric.h"
 #include "ga/ops/involutions.h"
+#include "ga/policies.h"
 
 namespace ga {
 
@@ -81,9 +82,9 @@ inline Multivector Versor::inverse() const {
     const Multivector norm2_mv = geometricProduct(mv, vrev);
 
     // Extract scalar part (mask 0)
-    const auto s = static_cast<float>(norm2_mv.component(static_cast<ga::BladeMask>(0)));
-    if (s == 0.0f) {
-        throw std::runtime_error("ga::Versor::inverse: scalar norm (V ~V) is zero");
+    const auto eps = ga::Policies::epsilon();
+    if (std::fabs(s) <= eps) {
+        throw std::runtime_error("ga::Versor::inverse: scalar norm (V ~V) is too close to zero");
     }
 
     float inv_s = 1.0f / s;

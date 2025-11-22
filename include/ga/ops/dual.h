@@ -32,14 +32,20 @@ namespace ga::ops {
             // Complement mask within the n-dimensional pseudoscalar
             const auto comp = static_cast<BladeMask>(I_mask ^ m);
 
-            // In a well-behaved orthonormal basis, this should be ±I (or 0 in degenerate cases).
-            // If gp.mask != I_mask, you may want to assert or handle specially for degenerate metrics.
-            // For now, we just use the sign.
-            const int sign = ga::ops::geometricProductBlade(
+            // Make degeneracy handling explicit: if the product does not yield the pseudoscalar
+            // or has zero sign, we treat the dual as undefined for this blade and skip it.
+            const auto gp = ga::ops::geometricProductBlade(
                     Blade{m, +1},
                     Blade{comp, +1},
                     alg->signature
-            ).sign;
+            );
+
+            if (gp.sign == 0 || gp.mask != I_mask) {
+                // Degenerate or ill-defined dual for this blade; skip contribution.
+                continue;
+            }
+
+            const int sign = gp.sign;
 
             result.setComponent(comp, result.component(comp) + c * sign);
         }

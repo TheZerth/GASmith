@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.28)
 project(GASmith LANGUAGES CXX)
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+
 # If user provided Python_EXECUTABLE, map it to Python3_EXECUTABLE for FindPython3
 if(DEFINED Python_EXECUTABLE AND NOT DEFINED Python3_EXECUTABLE)
     set(Python3_EXECUTABLE "${Python_EXECUTABLE}")

@@ -9,6 +9,8 @@
 #include "ga/ops/geometric.h"
 #include "ga/ops/involutions.h"
 #include "ga/ops/wedge.h"
+#include "ga/ops/inner.h"
+#include "ga/policies.h"
 
 namespace ga {
 
@@ -105,8 +107,9 @@ inline void Rotor::normalize() {
     Multivector norm2_mv = geometricProduct(mv, rrev);
 
     float s = static_cast<float>(norm2_mv.component(static_cast<ga::BladeMask>(0)));
-    if (s == 0.0f) {
-        throw std::runtime_error("ga::Rotor::normalize: rotor norm^2 is zero");
+    const auto eps = ga::Policies::epsilon();
+    if (std::fabs(s) <= eps) {
+        throw std::runtime_error("ga::Rotor::normalize: rotor norm^2 is too close to zero");
     }
 
     float inv_sqrt = 1.0f / std::sqrt(std::fabs(s));
@@ -174,25 +177,24 @@ inline Rotor Rotor::fromPlaneAngle(const Multivector& a,
     // Bivector B = a ∧ b
     Multivector B = wedge(a, b);
 
-    // Estimate magnitude of B (very rough): sum of squares of coefficients
+    // Metric-aware magnitude of B using the inner product: for a pure bivector, B ⋅ B is scalar.
+    Multivector BB = inner(B, B);
+    float norm2 = static_cast<float>(BB.component(static_cast<ga::BladeMask>(0)));
+    const auto eps = ga::Policies::epsilon();
+    if (std::fabs(norm2) <= eps) {
+        throw std::runtime_error(
+            "ga::Rotor::fromPlaneAngle: a ∧ b has zero (or near-zero) norm (no well-defined plane)");
+    }
+
+    float inv_mag = 1.0f / std::sqrt(std::fabs(norm2));
+
+    // Normalize B using the metric-aware magnitude
     const int dims = alg->dimensions;
     const std::size_t N = (1u << dims);
-    double sumSq = 0.0;
-    for (std::size_t i = 0; i < N; ++i) {
-        double v = B.storage[i];
-        sumSq += v * v;
-    }
-
-    if (sumSq == 0.0) {
-        throw std::runtime_error("ga::Rotor::fromPlaneAngle: a ∧ b is zero (no plane)");
-    }
-
-    double mag = std::sqrt(sumSq);
-    double inv_mag = 1.0 / mag;
 
     // Normalize B (combinatorial, not fully metric-aware, but good enough for now)
     for (std::size_t i = 0; i < N; ++i) {
-        B.storage[i] = static_cast<float>(B.storage[i] * inv_mag);
+        B.storage[i] *= inv_mag;
     }
 
     return fromBivectorAngle(B, theta);

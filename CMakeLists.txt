@@ -93,6 +93,9 @@ add_library(GASmith STATIC
         include/ga/ops/blade.h
         GASmith.h
         GASmith.cpp
+        include/ga/operators.h
+        include/ga/e3.h
+        include/ga/e2.h
 )
 
 # Public headers live in include/

@@ -20,7 +20,29 @@ Usage:
 2. Run CMake to build the library and examples
 3. Include GASmith in your project and start using Geometric Algebra!
 
-Syntax:
+Usage Syntax:
+```
+#include <ga/e3.h>
+#include <ga/ops/operators.h>
+
+using namespace ga;
+using namespace ga::e3;
+
+int main() {
+    auto a = scalar(1.0f) + 2.0f*e1 + 3.0f*e23;
+    auto b =          -e2 + 0.5f*e123;
+
+    auto gp = a * b;
+    auto out = a ^ b;
+    auto inn = a & b;
+
+    std::cout << "a = " << a << "\n";
+    std::cout << "b = " << b << "\n";
+    std::cout << "a*b = " << gp << "\n";
+}
+```
+
+Core Syntax:
 ```
 #include <GASmith.h>
 

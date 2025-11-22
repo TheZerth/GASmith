@@ -21,13 +21,67 @@ namespace ga {
         DenseStorage storage;   // coefficients indexed by mask
 
         explicit Multivector(const Algebra& a)
-            : alg(&a), storage(a.dimensions) {
-        }
+            : alg(&a), storage(a.dimensions) {}
 
         [[nodiscard]] double component(const BladeMask m) const { return storage[m]; }
         void setComponent(const BladeMask m, const double value) { storage[m] = value; }
 
     };
+
+    inline Multivector operator+(const Multivector& A, const Multivector& B) {
+        if (!A.alg || !B.alg || A.alg != B.alg) {
+            throw std::invalid_argument("ga::operator+: operands must share the same Algebra");
+        }
+        //Grab current algebra
+        Multivector result(*A.alg);
+        //Grab dimensions
+        const int dims = A.alg->dimensions;
+        //Determine number of coefficients
+        const std::size_t n = (1u << dims);
+        //Iterate over all blades and add them
+        for (int i = 0; i < n; ++i) {
+            result.storage[i] = A.storage[i] + B.storage[i];
+        }
+        return result;
+    }
+
+    inline Multivector operator-(const Multivector& A, const Multivector& B) {
+        if (!A.alg || !B.alg || A.alg != B.alg) {
+            throw std::invalid_argument("ga::operator+: operands must share the same Algebra");
+        }
+        //Grab current algebra
+        Multivector result(*A.alg);
+        //Grab dimensions
+        const int dims = A.alg->dimensions;
+        //Determine number of coefficients
+        const std::size_t n = (1u << dims);
+        //Iterate over all blades and add them
+        for (int i = 0; i < n; ++i) {
+            result.storage[i] = A.storage[i] - B.storage[i];
+        }
+        return result;
+    }
+
+    inline Multivector operator*(const float f, const Multivector& A) {
+        if (!A.alg) {
+            throw std::invalid_argument("ga::operator+: multivector has no Algebra");
+        }
+        //Grab current algebra
+        Multivector result(*A.alg);
+        //Grab dimensions
+        const int dims = A.alg->dimensions;
+        //Determine number of coefficients
+        const std::size_t n = (1u << dims);
+        //Iterate over all blades and multiply them
+        for (int i = 0; i < n; ++i) {
+            result.storage[i] = A.storage[i] * f;
+        }
+        return result;
+    }
+
+    inline Multivector operator*(const Multivector& A, const float f) {
+        return f * A;
+    }
 
 }
 

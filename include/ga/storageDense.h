@@ -13,9 +13,9 @@ struct DenseStorage {
 
     // OPTIMIZATION 1: Use float.
     // OPTIMIZATION 2: Use a raw array (or std::array) instead of std::vector.
-    // This allocates 1KB of contiguous memory directly inside the struct.
+    // This allocates 1KB of contiguous memory directly inside the struct. ?32 bytes not 1kb
     // No heap allocation (malloc/new) ever occurs.
-    float coefficients[MAX_ELEMENTS]{};
+    float coefficients[MAX_ELEMENTS];
 
     // OPTIMIZATION 3: Use uint8_t for dimensions (max 255)
     uint8_t dimensions;
@@ -27,7 +27,10 @@ struct DenseStorage {
         // Since we have a fixed size, we just wipe the whole 1KB.
         // It's often faster to wipe 1KB linearly than to calculate exactly
         // how much to wipe for small N.
-        std::memset(coefficients, 0, sizeof(coefficients));
+
+        // OPTIMIZATION 4: Only zero the memory we'll actually use - Zur
+        const size_t used_size = size_t(1) << dims;
+        std::memset(coefficients, 0, used_size * sizeof(float));
     }
 
     // Non-const access
@@ -45,7 +48,7 @@ struct DenseStorage {
 
     // Getter for current actual size used
     [[nodiscard]] size_t size() const {
-        return 1ULL << dimensions;
+        return size_t(1) << dimensions;
     }
 
     // Getter for capacity (always 256)

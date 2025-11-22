@@ -40,10 +40,10 @@ public:
     }
 
     /// @return the associated Algebra (may be nullptr if mv.alg is not set).
-    const Algebra* algebra() const noexcept { return mv.alg; }
+    [[nodiscard]] const Algebra* algebra() const noexcept { return mv.alg; }
 
     /// @return true if this versor has a valid algebra context.
-    bool isValid() const noexcept { return mv.alg != nullptr; }
+    [[nodiscard]] bool isValid() const noexcept { return mv.alg != nullptr; }
 
     /**
      * @brief Compute the inverse versor V^{-1}.
@@ -54,13 +54,13 @@ public:
      * If no algebra is attached, or the scalar norm is (near) zero,
      * behavior is undefined (for now we just divide and let the user handle it).
      */
-    Multivector inverse() const;
+    [[nodiscard]] Multivector inverse() const;
 
     /**
      * @brief Apply the versor to a multivector X:
      *        X' = V X V^{-1}.
      */
-    Multivector apply(const Multivector& X) const;
+    [[nodiscard]] Multivector apply(const Multivector& X) const;
 };
 
 // ---------------------------------------------------------------------
@@ -75,13 +75,13 @@ inline Multivector Versor::inverse() const {
     using namespace ga::ops;
 
     // Reverse of the versor
-    Multivector vrev = reverse(mv);
+    const Multivector vrev = reverse(mv);
 
     // For a proper versor, V * ~V is (up to metric sign) a scalar.
-    Multivector norm2_mv = geometricProduct(mv, vrev);
+    const Multivector norm2_mv = geometricProduct(mv, vrev);
 
     // Extract scalar part (mask 0)
-    float s = static_cast<float>(norm2_mv.component(static_cast<ga::BladeMask>(0)));
+    const auto s = static_cast<float>(norm2_mv.component(static_cast<ga::BladeMask>(0)));
     if (s == 0.0f) {
         throw std::runtime_error("ga::Versor::inverse: scalar norm (V ~V) is zero");
     }
@@ -105,8 +105,8 @@ inline Multivector Versor::apply(const Multivector& X) const {
     }
 
     using namespace ga::ops;
-    Multivector invV = inverse();
-    Multivector tmp  = geometricProduct(mv, X);
+    const Multivector invV = inverse();
+    const Multivector tmp  = geometricProduct(mv, X);
     return geometricProduct(tmp, invV);
 }
 

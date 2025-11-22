@@ -3,6 +3,8 @@
 #include <stdexcept>
 
 #include "blade.h"
+#include "ga/algebra.h"
+#include "ga/multivector.h"
 
 // Implements a full clifford product of two n-dimensional generalized multivectors.
 // Multivecors must share a metric

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ga/ops/geometric.h"
+#include "ga/multivector.h"
 
 namespace ga::ops {
 

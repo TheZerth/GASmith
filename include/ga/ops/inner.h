@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdlib>    // std::abs
+#include "ga/multivector.h"
 
 namespace ga::ops {
 

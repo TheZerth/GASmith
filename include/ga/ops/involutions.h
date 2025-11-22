@@ -1,4 +1,7 @@
 #pragma once
+#include "ga/multivector.h"
+#include "ga/algebra.h"
+#include "ga/basis.h"
 
 namespace ga::ops {
 

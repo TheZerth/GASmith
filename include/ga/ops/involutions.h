@@ -1,15 +1,11 @@
 #pragma once
 
-#include <bit>        // std::popcount
-#include "ga/multivector.h"
-#include "ga/basis.h"
-
-using ga::BladeMask;
-using ga::Multivector;
-using ga::Algebra;
-using ga::Blade;
-
 namespace ga::ops {
+
+    using ga::Algebra;
+    using ga::Multivector;
+    using ga::BladeMask;
+    using ga::Blade;
 
 // -------------- Reverse (~A) --------------------------------------------
 //
@@ -27,15 +23,15 @@ inline Multivector reverse(const Multivector& A) {
     Multivector result(*alg);
 
     for (int i = 0; i < bladeCount; ++i) {
-        BladeMask m = static_cast<BladeMask>(i);
-        double c = A.component(m);
+        const auto m = static_cast<BladeMask>(i);
+        const double c = A.component(m);
         if (c == 0.0)
             continue;
 
-        int r = ga::Blade::getGrade(m);
+        const int r = Blade::getGrade(m);
         // r(r-1)/2 mod 2:
-        int exponent = (r * (r - 1) / 2) & 1;
-        double sign = (exponent == 0) ? 1.0 : -1.0;
+        const int exponent = (r * (r - 1) / 2) & 1;
+        const double sign = (exponent == 0) ? 1.0 : -1.0;
 
         result.setComponent(m, static_cast<float>(c * sign));
     }
@@ -58,13 +54,13 @@ inline Multivector gradeInvolution(const Multivector& A) {
     Multivector result(*alg);
 
     for (int i = 0; i < bladeCount; ++i) {
-        BladeMask m = static_cast<BladeMask>(i);
-        double c = A.component(m);
+        const auto m = static_cast<BladeMask>(i);
+        const double c = A.component(m);
         if (c == 0.0)
             continue;
 
-        int r = ga::Blade::getGrade(m);
-        double sign = (r & 1) ? -1.0 : 1.0;  // (-1)^r
+        const int r = Blade::getGrade(m);
+        const double sign = (r & 1) ? -1.0 : 1.0;  // (-1)^r
 
         result.setComponent(m, static_cast<float>(c * sign));
     }
@@ -87,14 +83,14 @@ inline Multivector cliffordConjugate(const Multivector& A) {
     Multivector result(*alg);
 
     for (int i = 0; i < bladeCount; ++i) {
-        BladeMask m = static_cast<BladeMask>(i);
-        double c = A.component(m);
+        const auto m = static_cast<BladeMask>(i);
+        const double c = A.component(m);
         if (c == 0.0)
             continue;
 
-        int r = ga::Blade::getGrade(m);
-        int exponent = (r * (r + 1) / 2) & 1;
-        double sign = (exponent == 0) ? 1.0 : -1.0;
+        const int r = ga::Blade::getGrade(m);
+        const int exponent = (r * (r + 1) / 2) & 1;
+        const double sign = (exponent == 0) ? 1.0 : -1.0;
 
         result.setComponent(m, static_cast<float>(c * sign));
     }

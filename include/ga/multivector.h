@@ -1,7 +1,6 @@
 #pragma once
-#include "algebra.h"
 #include "storageDense.h"
-
+#include "algebra.h"
 // A mutlivector is our generalized maths object. It essentially is a combination of a BladeMask and an Algebra metric.
 // The BladeMask defines what axis the multivector contains.
 // The coeffiecients for this mask are coded in the denseStorage which is an array of 256 ints.
@@ -10,23 +9,23 @@
 // Aditionally the algebra metric helps define how axis overlaps behave.
 // An algebra pointer is used as the intention is to pre-compute algebra lookup tables and all multivectors of that metric will have access to it.
 
-using ga::Algebra;
-using ga::DenseStorage;
-
 namespace ga {
 
-struct Multivector {
-    const Algebra* alg;     // pointer to algebra descriptor
-    DenseStorage storage;   // coefficients indexed by mask
+    using ga::Algebra;
+    using ga::DenseStorage;
 
-    Multivector(const Algebra& a)
-        : alg(&a), storage(a.dimensions) {
-    }
+    struct Multivector {
+        const Algebra* alg;     // pointer to algebra descriptor
+        DenseStorage storage;   // coefficients indexed by mask
 
-    double component(BladeMask m) const { return storage[m]; }
-    void setComponent(BladeMask m, double value) { storage[m] = value; }
+        explicit Multivector(const Algebra& a)
+            : alg(&a), storage(a.dimensions) {
+        }
 
-};
+        [[nodiscard]] double component(const BladeMask m) const { return storage[m]; }
+        void setComponent(const BladeMask m, const double value) { storage[m] = value; }
+
+    };
 
 }
 

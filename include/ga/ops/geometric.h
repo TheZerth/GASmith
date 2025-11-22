@@ -1,12 +1,17 @@
 #pragma once
+#include <stdexcept>
+
 #include "blade.h"
-#include "../multivector.h"
+
 // Implements a full clifford product of two n-dimensional generalized multivectors.
 // Multivecors must share a metric
 
-using ga::BladeMask;
-
 namespace ga::ops {
+
+    using ga::BladeMask;
+    using ga::Algebra;
+    using ga::Multivector;
+    using ga::Blade;
 
     // A runtime callback type: decides whether a given (gradeA, gradeB, gradeR) term from the geometric product should be kept.
     using GradeFilterFn = bool (*)(int gradeA, int gradeB, int gradeR);
@@ -14,14 +19,13 @@ namespace ga::ops {
     // Do full geometric product, keep only terms where keep(gradeA, gradeB, gradeR) == true.
     inline Multivector geometricProductFiltered(const Multivector& A,
                                            const Multivector& B,
-                                           GradeFilterFn keep)
+                                           const GradeFilterFn keep)
     {
         const Algebra* algA = A.alg;
-        const Algebra* algB = B.alg;
 
-        if (!algA || !algB || algA != algB) {
+        if (const Algebra* algB = B.alg; !algA || !algB || algA != algB) {
             throw std::invalid_argument(
-                "ga::ops::geometricProductCore: Multivectors must share the same Algebra");
+                "ga::ops::geometricProductFiltered: Multivectors must share the same Algebra");
         }
 
         const Algebra* alg = algA;
@@ -31,8 +35,8 @@ namespace ga::ops {
         Multivector result(*alg);
 
         for (int i = 0; i < bladeCount; ++i) {
-            BladeMask maskA = static_cast<BladeMask>(i);
-            double coeffA = A.component(maskA);
+            const auto maskA = static_cast<BladeMask>(i);
+            const double coeffA = A.component(maskA);
             if (coeffA == 0.0)
                 continue;
 
@@ -42,8 +46,8 @@ namespace ga::ops {
             }
 
             for (int j = 0; j < bladeCount; ++j) {
-                BladeMask maskB = static_cast<BladeMask>(j);
-                double coeffB = B.component(maskB);
+                const auto maskB = static_cast<BladeMask>(j);
+                const double coeffB = B.component(maskB);
                 if (coeffB == 0.0)
                     continue;
 
@@ -55,21 +59,20 @@ namespace ga::ops {
                 Blade a{maskA, +1};
                 Blade b{maskB, +1};
 
-                Blade gp = geometricProductBlade(a, b, alg->signature);
+                const Blade gp = geometricProductBlade(a, b, alg->signature);
                 if (Blade::isZero(gp))
                     continue;
 
                 if (keep) {
-                    int gradeR = ga::Blade::getGrade(gp.mask);
-                    if (!keep(gradeA, gradeB, gradeR))
+                    if (const int gradeR = ga::Blade::getGrade(gp.mask); !keep(gradeA, gradeB, gradeR))
                         continue;
                 }
 
-                double contrib = coeffA * coeffB * static_cast<double>(gp.sign);
+                const double contrib = coeffA * coeffB * static_cast<double>(gp.sign);
                 if (contrib == 0.0)
                     continue;
 
-                double prev = result.component(gp.mask);
+                const double prev = result.component(gp.mask);
                 result.setComponent(gp.mask, prev + contrib);
             }
         }

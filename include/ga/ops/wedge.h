@@ -1,11 +1,10 @@
 #pragma once
 
-#include "ga/multivector.h"
-#include "ga/ops/blade.h"
-#include <bit>      // std::popcount (C++20)
-#include <stdexcept>
+#include "ga/ops/geometric.h"
 
 namespace ga::ops {
+
+using ga::Multivector;
 
 inline bool keepWedgeGrade(const int gradeA, const int gradeB, const int gradeR) {
     return gradeR == gradeA + gradeB;

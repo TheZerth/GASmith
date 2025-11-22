@@ -1,11 +1,12 @@
 // C++
 #pragma once
-#include "signature.h"
 
 namespace ga {
 
+    using ga::Signature;
+
     struct Algebra {
-        ga::Signature signature;
+        Signature signature;
         int dimensions;
 
         // default ctor initializes dimensions from signature

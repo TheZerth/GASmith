@@ -1,6 +1,4 @@
 #pragma once
-#include "../basis.h"
-#include "../signature.h"
 #include <bit>
 
 namespace ga::ops {
@@ -45,8 +43,8 @@ namespace ga::ops {
         int swapCount = 0;
         for (int i = 0; i < dims; ++i) {
             if (Blade::hasAxis(am, i)) {
-                BladeMask lowerMask = static_cast<BladeMask>((1u << i) - 1u);
-                BladeMask lowerInB = static_cast<BladeMask>(bm & lowerMask);
+                const auto lowerMask = static_cast<BladeMask>((1u << i) - 1u);
+                const auto lowerInB = static_cast<BladeMask>(bm & lowerMask);
                 swapCount += std::popcount(static_cast<unsigned int>(lowerInB));
             }
         }
@@ -61,10 +59,10 @@ namespace ga::ops {
         //
         // If g_ii == 0 for any overlapping axis, the entire product is zero.
         //
-        BladeMask overlap = static_cast<BladeMask>(am & bm);
+        const auto overlap = static_cast<BladeMask>(am & bm);
         for (int i = 0; i < dims; ++i) {
             if (Blade::hasAxis(overlap, i)) {
-                int gii = sig.getSign(i);  // +1, -1, or 0
+                const int gii = sig.getSign(i);  // +1, -1, or 0
                 if (gii == 0) {
                     // Null direction squared → zero blade
                     return Blade{static_cast<BladeMask>(0), 0};
@@ -81,7 +79,7 @@ namespace ga::ops {
         //
         //   resultMask = am XOR bm
         //
-        BladeMask resultMask = static_cast<BladeMask>(am ^ bm);
+        const auto resultMask = static_cast<BladeMask>(am ^ bm);
 
         if (sign == 0) {
             return Blade{static_cast<BladeMask>(0), 0};

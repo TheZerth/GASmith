@@ -82,12 +82,18 @@ inline Multivector Versor::inverse() const {
     const Multivector norm2_mv = geometricProduct(mv, vrev);
 
     // Extract scalar part (mask 0)
+    const float s = static_cast<float>(
+        norm2_mv.component(static_cast<BladeMask>(0))
+    );
+
     const auto eps = ga::Policies::epsilon();
     if (std::fabs(s) <= eps) {
-        throw std::runtime_error("ga::Versor::inverse: scalar norm (V ~V) is too close to zero");
+        throw std::runtime_error(
+            "ga::Versor::inverse: scalar norm (V ~V) is too close to zero"
+        );
     }
 
-    float inv_s = 1.0f / s;
+    const float inv_s = 1.0f / s;
 
     // Scale the reversed versor
     Multivector inv = vrev;
@@ -99,6 +105,7 @@ inline Multivector Versor::inverse() const {
 
     return inv;
 }
+
 
 inline Multivector Versor::apply(const Multivector& X) const {
     if (!mv.alg || !X.alg || mv.alg != X.alg) {

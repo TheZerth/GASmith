@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <cstddef>
+#include <vector>
 
 #include "ga/algebra.h"
 #include "ga/multivector.h"
@@ -123,114 +124,114 @@ struct LinearMap {
      *       L(e_{i1}) ∧ ... ∧ L(e_{ik})
      *   - Extended linearly to sums of blades (general multivector)
      */
-    Multivector apply(const Multivector& A) const {
-        if (!alg || !A.alg || A.alg != alg) {
-            throw std::invalid_argument("ga::LinearMap::apply: Algebra mismatch or null");
-        }
-
-        using namespace ga::ops;
-
-        const int dims = alg->dimensions;
-        const std::size_t bladeCount = (1u << dims);
-
-        // Precompute images of basis vectors: L(e_j)
-        Multivector vecImages[8];   // only [0..dims-1] used
-        for (int j = 0; j < dims; ++j) {
-            Multivector ej(*alg);
-            ej.setComponent(Blade::getBasis(j), 1.0f);
-            vecImages[j] = applyToVector(ej);
-        }
-
-        // Precompute images of all basis blades
-        Multivector bladeImages[256]; // up to 2^8 blades
-
-        // Scalar blade (mask 0): L(1) = 1
-        {
-            Multivector scalarOne(*alg);
-            scalarOne.setComponent(static_cast<BladeMask>(0), 1.0f);
-            bladeImages[0] = scalarOne;
-        }
-
-        // For each non-scalar blade, build its image as wedge of vector images
-        for (std::size_t mask = 1; mask < bladeCount; ++mask) {
-            BladeMask m = static_cast<BladeMask>(mask);
-            int grade = Blade::getGrade(m);
-            if (grade == 1) {
-                // Find which axis this mask corresponds to
-                int axis = -1;
-                for (int i = 0; i < dims; ++i) {
-                    if (m == Blade::getBasis(i)) {
-                        axis = i;
-                        break;
-                    }
-                }
-                if (axis < 0) {
-                    // Should not happen for a proper basis mask
-                    bladeImages[mask] = Multivector(*alg);
-                } else {
-                    bladeImages[mask] = vecImages[axis];
-                }
-            } else {
-                // grade >= 2: L(e_{i1} ∧ ... ∧ e_{ik}) =
-                //             L(e_{i1}) ∧ ... ∧ L(e_{ik})
-                // We build this recursively by peeling off the lowest-set bit.
-                // Let m = bit_i ∪ restMask; then:
-                //   L(m) = L(e_i) ∧ L(restMask)
-                BladeMask remaining = m;
-
-                // Extract lowest set bit as first axis
-                int firstAxis = -1;
-                for (int i = 0; i < dims; ++i) {
-                    BladeMask bit = Blade::getBasis(i);
-                    if (Blade::hasAxis(remaining, i)) {
-                        firstAxis = i;
-                        remaining = static_cast<BladeMask>(remaining & ~bit);
-                        break;
-                    }
-                }
-
-                if (firstAxis < 0) {
-                    bladeImages[mask] = Multivector(*alg);
-                    continue;
-                }
-
-                // Ensure L(restMask) is already computed; since we loop mask from low
-                // to high, any proper subset has a smaller integer representation.
-                Multivector image = vecImages[firstAxis];
-                if (remaining != 0) {
-                    Multivector restImage = bladeImages[static_cast<std::size_t>(remaining)];
-                    image = wedge(image, restImage);
-                }
-
-                bladeImages[mask] = image;
-            }
-        }
-
-        // Now apply L by linearity:
-        Multivector result(*alg);
-
-        for (std::size_t mask = 0; mask < bladeCount; ++mask) {
-            BladeMask m = static_cast<BladeMask>(mask);
-            double coeff = A.component(m);
-            if (coeff == 0.0)
-                continue;
-
-            // For mask 0 (scalar), bladeImages[0] is just 1, so result += coeff * 1
-            const Multivector& img = bladeImages[mask];
-
-            const int dimsLocal = alg->dimensions;
-            const std::size_t N = (1u << dimsLocal);
-            for (std::size_t i = 0; i < N; ++i) {
-                float c = img.storage[i];
-                if (c != 0.0f) {
-                    float prev = static_cast<float>(result.storage[i]);
-                    result.storage[i] = prev + static_cast<float>(coeff) * c;
-                }
-            }
-        }
-
-        return result;
+    inline Multivector apply(const Multivector& A) const {
+    if (!alg || !A.alg || A.alg != alg) {
+        throw std::invalid_argument("ga::LinearMap::apply: Algebra mismatch or null");
     }
+
+    using namespace ga::ops;
+
+    const int dims = alg->dimensions;
+    const std::size_t bladeCount = (1u << dims);
+
+    // Precompute images of basis vectors: L(e_j)
+    std::vector<Multivector> vecImages;
+    vecImages.reserve(dims);
+    for (int j = 0; j < dims; ++j) {
+        Multivector ej(*alg);
+        ej.setComponent(Blade::getBasis(j), 1.0f);
+        vecImages.push_back(applyToVector(ej));
+    }
+
+    // Precompute images of all basis blades
+    std::vector<Multivector> bladeImages;
+    bladeImages.reserve(bladeCount);
+    for (std::size_t i = 0; i < bladeCount; ++i) {
+        bladeImages.emplace_back(*alg);
+    }
+
+    // Scalar blade (mask 0): L(1) = 1
+    {
+        Multivector scalarOne(*alg);
+        scalarOne.setComponent(static_cast<BladeMask>(0), 1.0f);
+        bladeImages[0] = scalarOne;
+    }
+
+    // For each non-scalar blade, build its image as wedge of vector images
+    for (std::size_t mask = 1; mask < bladeCount; ++mask) {
+        BladeMask m = static_cast<BladeMask>(mask);
+        int grade = Blade::getGrade(m);
+        if (grade == 1) {
+            // Find which axis this mask corresponds to
+            int axis = -1;
+            for (int i = 0; i < dims; ++i) {
+                if (m == Blade::getBasis(i)) {
+                    axis = i;
+                    break;
+                }
+            }
+            if (axis < 0) {
+                // Should not happen for a proper basis mask
+                bladeImages[mask] = Multivector(*alg);
+            } else {
+                bladeImages[mask] = vecImages[axis];
+            }
+        } else {
+            // grade >= 2: L(e_{i1} ∧ ... ∧ e_{ik}) =
+            //             L(e_{i1}) ∧ ... ∧ L(e_{ik})
+            BladeMask remaining = m;
+
+            // Extract lowest set bit as first axis
+            int firstAxis = -1;
+            for (int i = 0; i < dims; ++i) {
+                BladeMask bit = Blade::getBasis(i);
+                if (Blade::hasAxis(remaining, i)) {
+                    firstAxis = i;
+                    remaining = static_cast<BladeMask>(remaining & ~bit);
+                    break;
+                }
+            }
+
+            if (firstAxis < 0) {
+                bladeImages[mask] = Multivector(*alg);
+                continue;
+            }
+
+            Multivector image = vecImages[firstAxis];
+            if (remaining != 0) {
+                Multivector restImage = bladeImages[static_cast<std::size_t>(remaining)];
+                image = wedge(image, restImage);
+            }
+
+            bladeImages[mask] = image;
+        }
+    }
+
+    // Now apply L by linearity:
+    Multivector result(*alg);
+
+    for (std::size_t mask = 0; mask < bladeCount; ++mask) {
+        BladeMask m = static_cast<BladeMask>(mask);
+        double coeff = A.component(m);
+        if (coeff == 0.0)
+            continue;
+
+        const Multivector& img = bladeImages[mask];
+
+        const int dimsLocal = alg->dimensions;
+        const std::size_t N = (1u << dimsLocal);
+        for (std::size_t i = 0; i < N; ++i) {
+            float c = img.storage[i];
+            if (c != 0.0f) {
+                float prev = static_cast<float>(result.storage[i]);
+                result.storage[i] = prev + static_cast<float>(coeff) * c;
+            }
+        }
+    }
+
+    return result;
+}
+
 };
 
 } // namespace ga

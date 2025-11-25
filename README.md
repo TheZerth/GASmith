@@ -13,7 +13,7 @@ It's that simple.
 Requirements:
 - C++17
 - CMake
-- Python
+- Python (If you want automated unit tests and benchmarks)
 
 Usage:
 1. Clone the repo
